@@ -1,7 +1,7 @@
 package tm.test
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.GivenWhenThen
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-abstract class BaseSpec extends FunSpec with Matchers with GivenWhenThen
+abstract class BaseSpec extends AnyFunSpec with Matchers with GivenWhenThen

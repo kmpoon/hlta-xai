@@ -1,6 +1,6 @@
 // -*- mode: scala -*-
 
-name := "HLTA"
+name := "HLTA-XAI"
 
 version := "2.3"
 
@@ -9,7 +9,7 @@ scalaVersion := "2.12.12"
 classpathTypes += "maven-plugin"
 
 libraryDependencies ++= 
-//  "org.scalatest" %% "scalatest" % "2.2.6" % "test" ::
+  "org.scalatest" %% "scalatest" % "3.2.0" % "test" ::
 //  "org.scalactic" %% "scalactic" % "2.2.6" % "test" ::
   "org.scalaz" %% "scalaz-core" % "7.2.26" ::
   "org.apache.commons" % "commons-csv" % "1.2" ::

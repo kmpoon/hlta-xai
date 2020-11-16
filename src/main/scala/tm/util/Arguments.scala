@@ -27,12 +27,12 @@ class Arguments(args: Seq[String]) extends ScallopConf(args) {
         "org.slf4j.simpleLogger.defaultLogLevel", "debug")
       //Pdfbox uses java.util.Logger
       Logger.getLogger("").setLevel(Level.WARNING);
-      edu.stanford.nlp.util.logging.RedwoodConfiguration.debugLevel().apply();
+//      edu.stanford.nlp.util.logging.RedwoodConfiguration.debugLevel().apply();
     }else{
       //Pdfbox uses java.util.Logger
       Logger.getLogger("").setLevel(Level.OFF);
       //Suppresses stanford nlp unnecessary message
-      edu.stanford.nlp.util.logging.RedwoodConfiguration.errorLevel().apply();
+//      edu.stanford.nlp.util.logging.RedwoodConfiguration.errorLevel().apply();
     }
 
     if (showLogTime())

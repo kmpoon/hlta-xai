@@ -12,11 +12,11 @@ import org.slf4j.LoggerFactory
 import tm.util.Reader
 import tm.util.Arguments
 import tm.util.FileHelpers
-import tm.text.Preprocessor
-import tm.text.Document
-import tm.text.Sentence
-import tm.text.StopWords
-import tm.text.StanfordNlp
+//import tm.text.Preprocessor
+//import tm.text.Document
+//import tm.text.Sentence
+//import tm.text.StopWords
+//import tm.text.StanfordNlp
 
 object HTD {
   
@@ -115,50 +115,51 @@ object HTD {
                     case "zh" | "chinese" => 1
                     case "nonascii" | _ => 1
                   }
-    def preprocessor(text: String) = {
-      conf.language().toLowerCase() match{
-        case "en" | "english" => {
-          StanfordNlp.EnglishPreprocessor(text, minChars = minChar, stopwords = StopWords.EnglishStopwords)
-          //Without standford nlp
-          //val tokens = Preprocessor.EnglishPreprocessor(text, minChars = minChar, stopwords = stopWords)
-          //Docuemnt(Sentence(tokens))
-        }
-        case "zh" | "chinese" => {
-          val tokens = Preprocessor.ChinesePreprocessor(text, minChars = minChar, stopwords = StopWords.ChineseStopwords)
-          Document(Sentence(tokens))
-        }
-        case "nonascii" | _ => {
-          val tokens = Preprocessor.NonAsciiPreprocessor(text, minChars = minChar, stopwords = StopWords.Empty)
-          Document(Sentence(tokens))
-        }
-      }
-    }
-    val wordSelector = tm.text.WordSelector.byTfIdf(minChar, 0, .25)
+//    def preprocessor(text: String) = {
+//      conf.language().toLowerCase() match{
+//        case "en" | "english" => {
+//          StanfordNlp.EnglishPreprocessor(text, minChars = minChar, stopwords = StopWords.EnglishStopwords)
+//          //Without standford nlp
+//          //val tokens = Preprocessor.EnglishPreprocessor(text, minChars = minChar, stopwords = stopWords)
+//          //Docuemnt(Sentence(tokens))
+//        }
+//        case "zh" | "chinese" => {
+//          val tokens = Preprocessor.ChinesePreprocessor(text, minChars = minChar, stopwords = StopWords.ChineseStopwords)
+//          Document(Sentence(tokens))
+//        }
+//        case "nonascii" | _ => {
+//          val tokens = Preprocessor.NonAsciiPreprocessor(text, minChars = minChar, stopwords = StopWords.Empty)
+//          Document(Sentence(tokens))
+//        }
+//      }
+//    }
+//    val wordSelector = tm.text.WordSelector.byTfIdf(minChar, 0, .25)
 
     val path = java.nio.file.Paths.get(conf.data())
     val (data, docNames, docUrls) = {
-      if(java.nio.file.Files.isDirectory(path)){
-        
-        //If path is a dir, look for txt or pdf
-        val dir = path
-        logger.info("Finding files under {}", dir.toString())
-        val files = FileHelpers.findFiles(dir, List("txt","pdf"))
-        if(files.isEmpty) throw new IllegalArgumentException("No txt/pdf files found files under " + dir)   
-        logger.info("Convert raw text/pdf to .sparse.txt format")
-        val data = tm.text.Convert(conf.name(), conf.vocabSize(), paths = files, encoding = conf.encoding(), 
-            preprocessor = preprocessor, wordSelector = wordSelector, concat = conf.concat())
-        data.saveAsTuple(conf.name()+".sparse.txt") 
-        logger.info("Output file reading order")
-        val writer = new PrintWriter(s"${conf.name()}.files.txt")
-        files.foreach(writer.println)
-        writer.close
-        
-        val docNames = files.map{file => file.getFileName.toString()}
-        val docUrls = files.map(_.toString())
-        (data, docNames, docUrls)
-        
-      }else if(List(".arff", ".hlcm", ".sparse.txt", ".lda.txt").exists(path.toString().endsWith(_))){
-        
+//      if(java.nio.file.Files.isDirectory(path)){
+//
+//        //If path is a dir, look for txt or pdf
+//        val dir = path
+//        logger.info("Finding files under {}", dir.toString())
+//        val files = FileHelpers.findFiles(dir, List("txt","pdf"))
+//        if(files.isEmpty) throw new IllegalArgumentException("No txt/pdf files found files under " + dir)
+//        logger.info("Convert raw text/pdf to .sparse.txt format")
+//        val data = tm.text.Convert(conf.name(), conf.vocabSize(), paths = files, encoding = conf.encoding(),
+//            preprocessor = preprocessor, wordSelector = wordSelector, concat = conf.concat())
+//        data.saveAsTuple(conf.name()+".sparse.txt")
+//        logger.info("Output file reading order")
+//        val writer = new PrintWriter(s"${conf.name()}.files.txt")
+//        files.foreach(writer.println)
+//        writer.close
+//
+//        val docNames = files.map{file => file.getFileName.toString()}
+//        val docUrls = files.map(_.toString())
+//        (data, docNames, docUrls)
+//
+//      }else if(List(".arff", ".hlcm", ".sparse.txt", ".lda.txt").exists(path.toString().endsWith(_))){
+      if(List(".arff", ".hlcm", ".sparse.txt", ".lda.txt").exists(path.toString().endsWith(_))){
+
         logger.info("Reading from data file")
         val data = tm.util.Reader.readData(path.toString, ldaVocabFile = conf.ldaVocab.getOrElse(""))
             
@@ -167,33 +168,33 @@ object HTD {
         val docUrls = null
         (data, docNames, docUrls)
         
-      }else if(path.toString().endsWith(".txt")){
-        
-        logger.info("Reading from text file {}", path.toString())
-        val data = tm.text.Convert(conf.name(), conf.vocabSize(), path = path, encoding = conf.encoding(), 
-            preprocessor = preprocessor, wordSelector = wordSelector, concat = conf.concat())
-        data.saveAsTuple(conf.name()+".sparse.txt")
-        
-        val docNames = FileHelpers.using(Source.fromFile(path.toString(), conf.encoding()))(_.getLines().toVector)
-        val docUrls = null
-        (data, docNames, docUrls)
-        
-      }else if(path.toString().endsWith(".csv")){
-        
-        import com.github.tototoshi.csv._
-        logger.info("Reading from csv file {}, looking for the field \"text\"", path.toString())
-        val data = tm.text.Convert(conf.name(), conf.vocabSize(), path = path, encoding = conf.encoding(), csvField = "text",
-            preprocessor = preprocessor, wordSelector = wordSelector, concat = conf.concat())
-        data.saveAsTuple(conf.name()+".sparse.txt")
-        
-        val header = FileHelpers.using(CSVReader.open(path.toString(), conf.encoding()))(_.readNext().getOrElse(List.empty))
-        val (hasTitle, hasUrl) = (header.contains("title"), header.contains("url"))
-        val docNames = if(hasTitle) FileHelpers.using(CSVReader.open(path.toString(), conf.encoding()))(_.iteratorWithHeaders.map{line => line("title")}.toVector)
-                       else FileHelpers.using(Source.fromFile(path.toString(), conf.encoding()))(_.getLines().toVector)
-        val docUrls = if(hasUrl) FileHelpers.using(CSVReader.open(path.toString(), conf.encoding()))(_.iteratorWithHeaders.map{line => line("url")}.toVector)
-                      else null
-        (data, docNames, docUrls)
-        
+//      }else if(path.toString().endsWith(".txt")){
+//
+//        logger.info("Reading from text file {}", path.toString())
+//        val data = tm.text.Convert(conf.name(), conf.vocabSize(), path = path, encoding = conf.encoding(),
+//            preprocessor = preprocessor, wordSelector = wordSelector, concat = conf.concat())
+//        data.saveAsTuple(conf.name()+".sparse.txt")
+//
+//        val docNames = FileHelpers.using(Source.fromFile(path.toString(), conf.encoding()))(_.getLines().toVector)
+//        val docUrls = null
+//        (data, docNames, docUrls)
+//
+//      }else if(path.toString().endsWith(".csv")){
+//
+//        import com.github.tototoshi.csv._
+//        logger.info("Reading from csv file {}, looking for the field \"text\"", path.toString())
+//        val data = tm.text.Convert(conf.name(), conf.vocabSize(), path = path, encoding = conf.encoding(), csvField = "text",
+//            preprocessor = preprocessor, wordSelector = wordSelector, concat = conf.concat())
+//        data.saveAsTuple(conf.name()+".sparse.txt")
+//
+//        val header = FileHelpers.using(CSVReader.open(path.toString(), conf.encoding()))(_.readNext().getOrElse(List.empty))
+//        val (hasTitle, hasUrl) = (header.contains("title"), header.contains("url"))
+//        val docNames = if(hasTitle) FileHelpers.using(CSVReader.open(path.toString(), conf.encoding()))(_.iteratorWithHeaders.map{line => line("title")}.toVector)
+//                       else FileHelpers.using(Source.fromFile(path.toString(), conf.encoding()))(_.getLines().toVector)
+//        val docUrls = if(hasUrl) FileHelpers.using(CSVReader.open(path.toString(), conf.encoding()))(_.iteratorWithHeaders.map{line => line("url")}.toVector)
+//                      else null
+//        (data, docNames, docUrls)
+//
       }else{
         throw new Exception("Unspported file format")
       }

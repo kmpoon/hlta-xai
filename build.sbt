@@ -16,8 +16,8 @@ libraryDependencies ++=
   "org.apache.commons" % "commons-compress" % "1.18" ::
   "org.apache.commons" % "commons-text" % "1.6" ::
   "commons-io" % "commons-io" % "2.6" ::
-  "edu.stanford.nlp" % "stanford-corenlp" % "3.9.1" ::
-  ("edu.stanford.nlp" % "stanford-corenlp" % "3.9.1" classifier "models") ::
+//  "edu.stanford.nlp" % "stanford-corenlp" % "3.9.1" ::
+//  ("edu.stanford.nlp" % "stanford-corenlp" % "3.9.1" classifier "models") ::
   "org.slf4j" % "slf4j-simple" % "1.7.25" ::
   "org.rogach" %% "scallop" % "3.1.3" ::
 //  "org.apache.spark" %% "spark-core" % "1.6.2" % "provided" ::
@@ -53,11 +53,11 @@ javacOptions ++= Seq("-source", "8", "-target", "8")
 // Compile the project before generating Eclipse files, so that generated .scala or .class files for views and routes are present
 EclipseKeys.preTasks := Seq(compile in Compile)
 
-assemblyJarName in assembly := "HLTA.jar"
+assemblyJarName in assembly := "HLTA-XAI.jar"
 
-assemblyOption in assembly :=
-  (assemblyOption in assembly).value.copy(
-    includeScala = false, includeDependency = false)
+//assemblyOption in assembly :=
+//  (assemblyOption in assembly).value.copy(
+//    includeScala = false, includeDependency = false)
 
 // To skip test during assembly
 test in assembly := {}

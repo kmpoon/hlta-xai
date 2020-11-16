@@ -6,7 +6,7 @@ import collection.JavaConverters._
 import scala.collection.immutable.Set
 import scala.io.Source
 import scalaz.Scalaz._
-import tm.text.NGram
+//import tm.text.NGram
 
 object Test {
   def main(args: Array[String]) {

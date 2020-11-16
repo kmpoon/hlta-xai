@@ -1,17 +1,19 @@
 package tm.hlta
 
-import tm.util.Arguments
-import java.nio.file.Paths
-import java.nio.file.Files
-import tm.util.FileHelpers
-import tm.util.Tree
+import java.io.PrintWriter
+
+import tm.util.{Arguments, Data, FileHelpers, Reader, Tree, manage}
+import java.nio.file.{Files, Path, Paths}
+
 import scala.io.Source
 import org.latlab.model.LTM
 import tm.hlta.HLTA._
 import org.latlab.util.DataSet
-import tm.util.Reader
-import tm.util.Data
 import org.slf4j.LoggerFactory
+import tm.util
+
+import scala.util.matching.Regex.Match
+import scala.collection.JavaConverters._
 
 object ExtractTopicTree {
   class Conf(args: Seq[String]) extends Arguments(args) {    
@@ -314,7 +316,7 @@ object ExtractTopicTree {
       val subtree = new LTM();
       subtree.addNode(latent);
 
-      val lemma = tm.text.DictionaryLemmatizer.EnglishLemmatizer
+//      val lemma = tm.text.DictionaryLemmatizer.EnglishLemmatizer
       val observedVarOrder = globallist.take(keywords).map{ case(v, mi) =>
         subtree.addNode(v);
         subtree.addEdge(subtree.getNode(v), subtree.getNode(latent));
@@ -444,4 +446,44 @@ object ExtractTopicTree {
     
   }
     
+}
+
+object RemoveProbabilities {
+  def main(args: Array[String]): Unit = {
+    if (args.length < 1) {
+      println("RemoveProbabilities file [...] (e.g. {name}.tree.nodes.js)")
+      println("RemoveProbabilities directory")
+    }  else {
+      val path = Paths.get(args(0))
+      if (Files.isDirectory(path))
+        removeFromFilesInDir(path)
+      else {
+        args.par.map(p => Paths.get(p)).foreach(removeFromFile)
+      }
+
+    }
+  }
+
+  def removeFromFilesInDir(directory: Path): Unit = {
+    val files = Files.list(directory).iterator().asScala.filter(f => f.toString.endsWith(".nodes.js"))
+    files.toList.par.foreach(removeFromFile)
+  }
+
+  def removeFromFile(file: Path) = {
+    val filename = file.toString
+
+    val content = manage(Source.fromFile(file.toFile)){ s => s.getLines().mkString("\n")}
+    manage(new PrintWriter(file.toString)) { _.write(removeFromContent(content)) }
+    println(s"${filename} saved.")
+  }
+
+  val rules = Seq(
+    ("""(id: "(Z[2-9][0-9]+)", text: ")[^"]+"""".r, (m: Match) => s"""${m.group(1)}${m.group(2)}""""),
+    ("""(id: "Z[0-9]+", text: ")[0-9]\.[0-9]{3} """.r, (m: Match) => m.group(1)),
+    ("""([^:]) [0-9]\.[0-9]+""".r, (m: Match) => m.group(1))
+  )
+
+  def removeFromContent(content: String) =
+    RemoveProbabilities.rules.foldLeft(content)((z, r) => r._1.replaceAllIn(z, r._2))
+
 }

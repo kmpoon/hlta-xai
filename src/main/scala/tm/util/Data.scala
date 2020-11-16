@@ -12,70 +12,70 @@ import java.util.ArrayList
 import org.latlab.model.LTM
 import org.slf4j.LoggerFactory
 import scala.util.Random
-import tm.text.Dictionary
-import tm.text.NGram
+//import tm.text.Dictionary
+//import tm.text.NGram
 
 object Data{
-  type TokenCounts = Map[NGram, Int]
-  
-  def fromTokenAndTokenCounts(tokens: Seq[NGram], tokenCountsSeq: Seq[TokenCounts], 
-      isBinary: Boolean = false, name: String = "data"): Data = { 
-    
-    def _newVariable(name: String) = {
-      val b = new ArrayList[String]()
-      b.add(0, "s0")
-      b.add(1, "s1")         
-      new Variable(name, b)
-    }
-    
-    def _toBow(indices: Map[NGram, Int], counts: TokenCounts): Map[Int, Double] = {
-//      val values = Array.fill(indices.size)(0.0)
-//      counts.foreach { wc =>
-//        indices.get(wc._1).foreach { i => values(i) = wc._2 }
-//      }
-      counts.filter(wc => indices.contains(wc._1)).map(wc => (indices(wc._1), wc._2.toDouble)).toMap
-    }
-    
-    val variables = tokens.map{token => _newVariable(token.toString)}
-    val tokenIndices = tokens.zipWithIndex.toMap
-    val instances = tokenCountsSeq.zipWithIndex.map{ case(tokenCounts, index) => 
-      val values = _toBow(tokenIndices, tokenCounts)
-      //Each instance has a unique name
-      //Such that even data is cut, instance name remain the same as tokenCountsSeq's order
-      new Data.SparseInstance(values, 1.0, name = index.toString)
-    }
-    new Data(variables.toIndexedSeq, instances.toIndexedSeq, isBinary, name)
-  }
-  
-  def fromDictionaryAndTokenCounts(dictionary: Dictionary, tokenCountsSeq: Seq[TokenCounts], 
-      isBinary: Boolean = false, name: String = "data"): Data = { 
-    
-    def _newVariable(name: String) = {
-      val b = new ArrayList[String]()
-      b.add(0, "s0")
-      b.add(1, "s1")         
-      new Variable(name, b)
-    }
-    
-    def _toBow(indices: Map[NGram, Int], counts: TokenCounts): Map[Int, Double] = {
-//      val values = Array.fill(indices.size)(0.0)
-//      counts.foreach { wc =>
-//        indices.get(wc._1).foreach { i => values(i) = wc._2 }
-//      }
-//      values
-      counts.flatMap{wc => indices.get(wc._1).map{ i => (i -> wc._2.toDouble )}}
-    }
-    
-    val tokenIndices = dictionary.map
-    val variables = dictionary.info.map{info => _newVariable(info.token.toString)}
-    val instances = tokenCountsSeq.zipWithIndex.map{ case(tokenCounts, index) => 
-      val values = _toBow(tokenIndices, tokenCounts)
-      //Each instance has a unique name
-      //Such that even data is cut, instance name remain the same as tokenCountsSeq's order
-      new Data.SparseInstance(values, 1.0, name = index.toString())
-    }
-    new Data(variables, instances.toIndexedSeq, isBinary, name)
-  }
+////  type TokenCounts = Map[NGram, Int]
+////
+////  def fromTokenAndTokenCounts(tokens: Seq[NGram], tokenCountsSeq: Seq[TokenCounts],
+////      isBinary: Boolean = false, name: String = "data"): Data = {
+////
+////    def _newVariable(name: String) = {
+////      val b = new ArrayList[String]()
+////      b.add(0, "s0")
+////      b.add(1, "s1")
+////      new Variable(name, b)
+////    }
+////
+////    def _toBow(indices: Map[NGram, Int], counts: TokenCounts): Map[Int, Double] = {
+//////      val values = Array.fill(indices.size)(0.0)
+//////      counts.foreach { wc =>
+//////        indices.get(wc._1).foreach { i => values(i) = wc._2 }
+//////      }
+////      counts.filter(wc => indices.contains(wc._1)).map(wc => (indices(wc._1), wc._2.toDouble)).toMap
+////    }
+////
+////    val variables = tokens.map{token => _newVariable(token.toString)}
+////    val tokenIndices = tokens.zipWithIndex.toMap
+////    val instances = tokenCountsSeq.zipWithIndex.map{ case(tokenCounts, index) =>
+////      val values = _toBow(tokenIndices, tokenCounts)
+////      //Each instance has a unique name
+////      //Such that even data is cut, instance name remain the same as tokenCountsSeq's order
+////      new Data.SparseInstance(values, 1.0, name = index.toString)
+////    }
+////    new Data(variables.toIndexedSeq, instances.toIndexedSeq, isBinary, name)
+////  }
+////
+////  def fromDictionaryAndTokenCounts(dictionary: Dictionary, tokenCountsSeq: Seq[TokenCounts],
+////      isBinary: Boolean = false, name: String = "data"): Data = {
+////
+////    def _newVariable(name: String) = {
+////      val b = new ArrayList[String]()
+////      b.add(0, "s0")
+////      b.add(1, "s1")
+////      new Variable(name, b)
+////    }
+////
+////    def _toBow(indices: Map[NGram, Int], counts: TokenCounts): Map[Int, Double] = {
+//////      val values = Array.fill(indices.size)(0.0)
+//////      counts.foreach { wc =>
+//////        indices.get(wc._1).foreach { i => values(i) = wc._2 }
+//////      }
+//////      values
+////      counts.flatMap{wc => indices.get(wc._1).map{ i => (i -> wc._2.toDouble )}}
+////    }
+//
+//    val tokenIndices = dictionary.map
+//    val variables = dictionary.info.map{info => _newVariable(info.token.toString)}
+//    val instances = tokenCountsSeq.zipWithIndex.map{ case(tokenCounts, index) =>
+//      val values = _toBow(tokenIndices, tokenCounts)
+//      //Each instance has a unique name
+//      //Such that even data is cut, instance name remain the same as tokenCountsSeq's order
+//      new Data.SparseInstance(values, 1.0, name = index.toString())
+//    }
+//    new Data(variables, instances.toIndexedSeq, isBinary, name)
+//  }
   
   private def binarize(value: Double): Double = if (value > 0.5) 1.0 else 0.0
   //The idea of count data has been abandoned

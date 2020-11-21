@@ -80,6 +80,13 @@ public final class DataSet {
 		}
 
 		/**
+		 * Added to workaround the private modifier for the constructor.
+		 */
+		public static DataCase construct(int[] states, double weight) {
+			return new DataCase(null, states, weight);
+		}
+
+		/**
 		 * <p>
 		 * Compares this data case with the specified object for order.
 		 * </p>
@@ -430,7 +437,7 @@ public final class DataSet {
 
 		_data = new ArrayList<DataCase>();
 	}
- 
+
 	
 	/**
 	 * Constructs an empty data set of the specified array of variables.
@@ -454,6 +461,20 @@ public final class DataSet {
 
 		_data = new ArrayList<DataCase>();
 	}
+
+	/**
+	 * Uses the given list of data cases.  It assumes ownership of the given list.
+	 */
+	public void setDataCases(ArrayList<DataCase> data, boolean missing, double totalWeight) {
+		_data = data;
+		for (DataCase d : _data) {
+			d._dataSet = this;
+		}
+
+		_missing = missing;
+		_totalWeight = totalWeight;
+	}
+
 	/**
 	 * Adds the specified data case with the specified weight to this data set.
 	 * 

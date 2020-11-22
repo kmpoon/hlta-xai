@@ -31,9 +31,7 @@ import org.latlab.graph.Edge;
 import org.latlab.graph.UndirectedGraph;
 import org.latlab.io.Parser;
 import org.latlab.io.bif.BifParser;
-import org.latlab.learner.ParallelEmLearner;
-import org.latlab.learner.ParallelStepwiseEmLearner;
-import org.latlab.learner.Parallelism;
+import org.latlab.learner.*;
 import org.latlab.model.BayesNet;
 import org.latlab.model.BeliefNode;
 import org.latlab.model.LTM;
@@ -47,7 +45,6 @@ import org.latlab.util.ScoreCalculator;
 import org.latlab.util.StringPair;
 import org.latlab.util.Utils;
 import org.latlab.util.Variable;
-import org.latlab.learner.SparseDataSet;
 
 /**
  * Hierarchical Latent Tree Analysis for topic detection.
@@ -71,11 +68,12 @@ public class StepwiseEMHLTA {
 	/**
 	 * Original data.
 	 */
-	private SparseDataSet _OrigSparseData;
+//	private SparseDataSet _OrigSparseData;
 	
 	private DataSet _OrigDenseData;
 
-	private DataSet _workingData;
+	// changed to local variable
+	// private DataSet _workingData;
 
 	private DataSet _test;
 	/**
@@ -273,6 +271,8 @@ public class StepwiseEMHLTA {
 	 */
 	public void initialize(String[] args) throws IOException, Exception
 	{
+		SparseDataSet _OrigSparseData = null;
+
 		// _model = new LTM();
 		// Parser parser = new BifParser(new FileInputStream(args[0]),"UTF-8");
 		// parser.parse(_model);
@@ -364,10 +364,8 @@ public class StepwiseEMHLTA {
 	public void initialize(SparseDataSet sparseDataSet, int emMaxSteps, int emNumRestarts, double emThreshold, double udThreshold,
 			String modelName, int maxIsland, int maxTop, int batchSize, int maxEpochs, int globalEmMaxSteps, 
 			boolean noBridging, int structLearnSize, int maxCore, int parallelFinding, double ctThreshold, boolean noCorrelationTest) throws IOException, Exception{
-        System.out.println("Initializing......");
+        System.out.println("Start initializing......");
 		// Read the data set
-		_OrigSparseData = sparseDataSet;
-
 		_EmMaxSteps = emMaxSteps;//Integer.parseInt(args[1]);
 
 		_EmNumRestarts = emNumRestarts;//Integer.parseInt(args[2]);
@@ -375,7 +373,7 @@ public class StepwiseEMHLTA {
 		_emThreshold = emThreshold;//Double.parseDouble(args[3]);
 
 		_UDthreshold = udThreshold;//Double.parseDouble(args[4]);
-		
+
 		_modelname = modelName;//args[5];
 
 		_maxIsland = maxIsland;//Integer.parseInt(args[6]);
@@ -391,15 +389,17 @@ public class StepwiseEMHLTA {
         _CTthreshold = ctThreshold;
 		_noCT = noCorrelationTest;
 		if(_sizeFirstBatch.contains("all")){
-            _OrigDenseData = _OrigSparseData.getWholeDenseData();
+//            _OrigDenseData = sparseDataSet.getWholeDenseData();
+			_OrigDenseData = DataOps.convertToDataSet(sparseDataSet);
 		}else{
-            _OrigDenseData = _OrigSparseData.GiveDenseBatch(Integer.parseInt(_sizeFirstBatch));
+            _OrigDenseData = sparseDataSet.GiveDenseBatch(Integer.parseInt(_sizeFirstBatch));
 		}
 		
 		if (1 == _MaxCoreNumber) {
 			_useOnlySerialVersion = true;
 		}
 		_hyperParam.set(_EmMaxSteps, _EmNumRestarts, _emThreshold, _islandNotBridging, _maxTop, _maxIsland, _UDthreshold, _CTthreshold, _noCT, _MaxCoreNumber);
+		System.out.println("Finish initializing......");
 	}
 	
 	
@@ -487,7 +487,7 @@ public class StepwiseEMHLTA {
 	 */
 	public LTM FastHLTA_learn() throws FileNotFoundException,
 			UnsupportedEncodingException {
-			_workingData = _OrigDenseData;
+			DataSet _workingData = _OrigDenseData;
 			LTM CurrentModel = null;
 			long start = System.currentTimeMillis();
 			System.out.println("Start model construction...");
@@ -499,8 +499,13 @@ public class StepwiseEMHLTA {
 			DataSet training_data;
 			if (_workingData.getNumberOfEntries() > _sample_size_for_structure_learn) {
 				int nOfTraining = _sample_size_for_structure_learn;
-				training_data = _workingData.sampleWithReplacement(nOfTraining);
-				System.out.println("DataSet size is: " + _workingData.getNumberOfEntries() + " larger than 10000. Reduce it to " + _sample_size_for_structure_learn + " when structure learning.");
+//				training_data = _workingData.sampleWithReplacement(nOfTraining);
+				training_data = DataOps.sampleWithReplacement(_workingData, nOfTraining);
+				System.out.println("DataSet size is: " + _workingData.getNumberOfEntries() +
+						" larger than " + _sample_size_for_structure_learn + ". " +
+						"Reduce it to " + _sample_size_for_structure_learn + " when structure learning." +
+						"Sampled data has " + training_data.getData().size() + " entries with weight = " +
+						training_data.getTotalWeight() + ".");
 			} else {
 				training_data = _workingData;
 			}

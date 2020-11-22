@@ -1,5 +1,6 @@
 package org.latlab.learner
 
+import collection.JavaConverters._
 import java.util.zip.GZIPInputStream
 
 import tm.test.BaseSpec
@@ -8,7 +9,10 @@ import org.latlab.util.DataSet
 import org.latlab.util.DataSet.DataCase
 import tm.util.Reader.ARFFToData
 
-class DataSparseToDenseSpec extends BaseSpec {
+import java.util.ArrayList
+import java.util.Arrays
+
+class DataOpsSpec extends BaseSpec {
 
   trait TestData {
     val data: tm.util.Data
@@ -43,6 +47,33 @@ class DataSparseToDenseSpec extends BaseSpec {
       }
     }
 
+    it("should project to the first three variables properly") {
+      new Papers500 {
+        val vs = wholeData.getVariables
+        val subset = new ArrayList(Arrays.asList(vs(0), vs(1), vs(2)))
+        checkDataSets(DataOps.project(wholeData, subset), wholeData.project(subset))
+      }
+    }
+
+    it("should project to the a subset of 10 variables properly") {
+      new Papers500 {
+        val vs = wholeData.getVariables
+        val subset = new ArrayList(Arrays.asList(
+          vs(100), vs(200), vs(300), vs(400), vs(499), vs(252), vs(325), vs(0), vs(12), vs(398)))
+        checkDataSets(DataOps.project(wholeData, subset), wholeData.project(subset))
+      }
+    }
+
+    it("should sample data appropriately") {
+      new Papers500 {
+        val size = 10
+        val samples = DataOps.sampleWithReplacement(wholeData, size)
+        samples.getTotalWeight should equal (size)
+        samples.getNumberOfEntries should be >= 0
+        samples.getNumberOfEntries should be <= 10
+      }
+    }
+
   }
 
   describe("Small data set") {
@@ -57,7 +88,7 @@ class DataSparseToDenseSpec extends BaseSpec {
 
     it("should allow conversion from sparse data to data weights") {
       new SmallTestData {
-        val converted = DataOps.convertToDataWeights(sparseData, null).toArrayList()
+        val converted = DataOps.convertToDataCases(sparseData).toArrayList()
         converted.size should equal (3)
 
         checkDataCase(converted.get(0), Array(0,1,0,0,0), 1)
@@ -71,6 +102,43 @@ class DataSparseToDenseSpec extends BaseSpec {
         checkDataSets(DataOps.convertToDataSet(sparseData), wholeData)
       }
     }
+
+    it("should project to the first  variable properly") {
+      new SmallTestData {
+        val vs = wholeData.getVariables
+        val subset: ArrayList[org.latlab.util.Variable] =
+          new ArrayList(Arrays.asList(vs(0)))
+        checkDataSets(DataOps.project(wholeData, subset), wholeData.project(subset))
+      }
+    }
+
+    it("should project to the first three variables properly") {
+      new SmallTestData {
+        val vs = wholeData.getVariables
+        val subset: ArrayList[org.latlab.util.Variable] =
+          new ArrayList(Arrays.asList(vs(0), vs(1), vs(2)))
+        checkDataSets(DataOps.project(wholeData, subset), wholeData.project(subset))
+      }
+    }
+
+    it("should project to the last four variables properly") {
+      new SmallTestData {
+        val vs = wholeData.getVariables
+        val subset = new ArrayList(Arrays.asList(vs(2), vs(3), vs(1), vs(4)))
+        checkDataSets(DataOps.project(wholeData, subset), wholeData.project(subset))
+      }
+    }
+
+    it("should sample data appropriately") {
+      new SmallTestData {
+        val size = 10
+        val samples = DataOps.sampleWithReplacement(wholeData, size)
+        samples.getTotalWeight should equal (size)
+        samples.getNumberOfEntries should be >= 0
+        samples.getNumberOfEntries should be <= 10
+      }
+    }
+
   }
 
   def checkDataSets(subject: DataSet, target: DataSet) = {

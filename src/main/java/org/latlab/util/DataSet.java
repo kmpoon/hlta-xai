@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.latlab.learner.DataOps;
 import org.latlab.model.BayesNet;
 
 import weka.core.Attribute;
@@ -871,6 +872,14 @@ public final class DataSet {
 		return Frequencies;
 		
 	}
+
+	public DataSet project(ArrayList<Variable> variables) {
+		return parallelProject(variables);
+	}
+
+	public DataSet parallelProject(ArrayList<Variable> variables) {
+		return DataOps.project(this, variables);
+	}
 	
 	
 	/**
@@ -881,7 +890,7 @@ public final class DataSet {
 	 *            list of variables onto which this data set is to be project.
 	 * @return a projected data set on the specified list of variables(enforced order).
 	 */
-	public DataSet project(ArrayList<Variable> variables) {
+	public DataSet sequentialProject(ArrayList<Variable> variables) {
 		// array representation
 		Variable[] varArray = variables.toArray(new Variable[variables.size()]);
 

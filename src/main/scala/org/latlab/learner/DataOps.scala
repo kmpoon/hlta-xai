@@ -4,19 +4,20 @@ package org.latlab.learner
 import java.util
 import java.util.Collections
 
+import cern.jet.random.Uniform
 import org.latlab.util.DataSet.DataCase
 import org.latlab.util.{DataSet, Variable}
 
 import scala.collection.JavaConverters._
-
 import scala.collection.Searching._
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 object DataOps {
   type States = Array[Int]
 
   def addToList(cases: util.ArrayList[DataCase], newCase: DataCase) = {
-//    println(s"add single case to list with ${cases.size()}")
+    //    println(s"add single case to list with ${cases.size()}")
 
     val index = Collections.binarySearch(cases, newCase)
     val inserted = if (index < 0) {
@@ -41,7 +42,7 @@ object DataOps {
    * the two lists are sorted with no duplicates.
    */
   def mergeLists(x: util.ArrayList[DataCase], y: util.ArrayList[DataCase]): util.ArrayList[DataCase] = {
-//    println(s"merge with ${x.size()} and ${y.size()}")
+    //    println(s"merge with ${x.size()} and ${y.size()}")
 
     val result = new util.ArrayList[DataCase](x.size() + y.size())
 
@@ -94,6 +95,11 @@ object DataOps {
       result
     }
 
+    def buildDataSet(dataSet: DataSet): DataSet = {
+      dataSet.setDataCases(toArrayList(), missing(), totalWeights())
+      dataSet
+    }
+
     def add(other: DataCases): Multiple
   }
 
@@ -108,15 +114,15 @@ object DataOps {
     }
   }
 
-  case class Singleton(statesOp: () => States) extends DataCases {
-    private lazy val states = statesOp()
+  case class Singleton(statesOp: () => (States, Double)) extends DataCases {
+    private lazy val (states, _totalWeight) = statesOp()
 
-    override def missing: Boolean = DataSetBuilder.checkMissing(states)
+    override def missing: Boolean = checkMissing(states)
 
-    override def totalWeights: Double = 1
+    override def totalWeights: Double = _totalWeight
 
     override def get(i: Int) =
-      if (i == 0) DataCase.construct(states, 1)
+      if (i == 0) DataCase.construct(states, _totalWeight)
       else throw new IllegalArgumentException
 
     override def toArrayList(): util.ArrayList[DataCase] = {
@@ -127,10 +133,7 @@ object DataOps {
 
     override def size() = 1
 
-    def add(other: DataCases): Multiple = {
-      if (other.size() != 1)
-        throw new IllegalArgumentException
-
+    override def add(other: DataCases): Multiple = {
       val c1 = get(0)
       val c2 = other.get(0)
 
@@ -168,7 +171,7 @@ object DataOps {
     def add(newCase: DataCase): Multiple = {
 
       val inserted = addToList(cases, newCase)
-      if (inserted) _missing ||= DataSetBuilder.checkMissing(newCase.getStates)
+      if (inserted) _missing ||= checkMissing(newCase.getStates)
       _totalWeights += newCase.getWeight
       this
     }
@@ -189,217 +192,19 @@ object DataOps {
     }
   }
 
-
-  // type DataWeights = mutable.TreeMap[States, DataCase]
-
-  trait ArrayOrdering[T] extends Ordering[Array[T]] {
-    def ord: Ordering[T]
-
-    override def compare(x: Array[T], y: Array[T]): Int = {
-      val length = Math.min(x.length, y.length)
-      for (i <- (0 until length)) {
-        val cmp = ord.compare(x(i), y(i))
-        if (cmp != 0) return cmp
-      }
-
-      x.length compare y.length
-    }
-  }
-
-  implicit object IntArrayOrdering extends ArrayOrdering[Int] {
-    override val ord = Ordering[Int]
-  }
-
-  implicit object DataCaseOrdering extends Ordering[DataCase] {
-    override def compare(x: DataCase, y: DataCase): Int =
-      IntArrayOrdering.compare(x.getStates, y.getStates)
-  }
-
-
-  class DataWeights(val target: DataSet) {
-    //    private val cases = new mutable.TreeMap[States, DataCase]()
-    //    private val cases = new util.ArrayList[DataCase]()
-    private val cases = new ArrayBuffer[DataCase]()
-
-    def updateData(states: States, additionalWeight: Double) = {
-      val newCase = DataCase.construct(states, additionalWeight)
-
-      cases.search(newCase) match {
-        case Found(i) => {
-          val c = cases(i)
-          c.setWeight(c.getWeight + additionalWeight)
-        }
-        case InsertionPoint(i) => cases.insert(i, newCase)
-      }
-
-      //      val index = Collections.binarySearch(cases, newCase)
-      //      if (index < 0) {
-      //        cases.add(-index - 1, newCase)
-      //      } else {
-      //        val c = cases.get(index)
-      //        c.setWeight(c.getWeight + additionalWeight)
-      //      }
-
-      //      val c = cases.getOrElseUpdate(states, DataCase.construct(target, states, 0))
-      //      c.setWeight(c.getWeight + additionalWeight)
-    }
-
-
-    def toArrayList(): util.ArrayList[DataCase] = {
-      //      val l = new util.ArrayList[DataCase](cases.size)
-      //      cases.values.foreach(l.add)
-      //      l
-
-      //      cases
-      new util.ArrayList(cases.asJavaCollection)
-    }
-
-    def anyMissing() = cases.exists(p => p.getStates.exists(_ == DataSet.MISSING_VALUE))
-
-    def getTotalWeights = cases.foldLeft(0.0)(_ + _.getWeight)
-  }
-
-  object DataSetBuilder {
-    def convertFrom(states: States, weight: Double) = {
-      val cases = new util.ArrayList[DataCase]()
-      cases.add(DataCase.construct(states, weight))
-      new DataSetBuilder(Multiple(cases, checkMissing(states), weight))
-    }
-
-    def checkMissing(states: States) = states.exists(_ == DataSet.MISSING_VALUE)
-  }
-
-  class DataSetBuilder(private val cases: Multiple = Multiple()) {
-
-    def add(newCase: DataCase) = {
-      cases.add(newCase)
-      this
-    }
-
-    def add(states: States, additionalWeight: Double): DataSetBuilder = {
-      add(DataCase.construct(states, additionalWeight))
-    }
-
-    def add(other: DataSetBuilder): DataSetBuilder = {
-      // optimise for a very common case
-      if (other.cases.size() <= 1)
-        return add(other.cases.get(0))
-
-
-      println(s"Merging with ${cases.size()} and ${other.cases.size()}")
-      cases.add(other.cases)
-      this
-    }
-
-
-
-    def build(variables: Array[Variable]) = cases.buildDataSet(variables)
-
-    def addTo(sparseData: SparseDataSet): DataSetBuilder = {
-      val size = sparseData.getNumOfDatacase
-      val order = Range(0, size).toIndexedSeq
-      addTo(sparseData, size, 0, order, getInternalToExternalIDMapping(sparseData))
-    }
-
-    def addTo(sparseData: SparseDataSet,
-              batchSize: Int, start: Int,
-              order: IndexedSeq[Int], intToExtID: Map[Integer, Int]): DataSetBuilder = {
-      val length = sparseData._VariablesSet.size
-
-      def getStates(i: Int) = {
-        val states = Array.fill(length)(0)
-        val row = sparseData.SDataSet.userMatrix.get(order(i))
-
-        // Filling in the positive entries
-        val iter = row.iterator
-        while (iter.hasNext) {
-          val internal_ID = iter.nextInt // the id of the item
-          states(intToExtID(internal_ID)) = 1
-        }
-
-//        println("Created: " + states.mkString(","))
-
-        states
-      }
-
-
-      //      for (i <- start until start + batchSize) {
-      //        val states = time("getting states")(getStates(i))
-      //        time("adding states")(addToStates(states, 1))
-      //      }
-
-      val cases = (start until start + batchSize)
-        .map(i => Singleton(() => getStates(i)).asInstanceOf[DataCases])
-        .par
-        .reduce(DataCases.merge).asInstanceOf[Multiple]
-
-      new DataSetBuilder(cases)
-    }
-
-  }
-
-
-  //  case class Instance(states: Array[Int], weight: Double)
-  //
-  //  trait ArrayOrdering[T] extends Ordering[Array[T]] {
-  //    val ord: Ordering[T]
-  //
-  //    override def compare(x: Array[T], y: Array[T]): Int = {
-  //      val length = Math.min(x.length, y.length)
-  //      for (i <- (0 until length)) {
-  //        val cmp = ord.compare(x(i), y(i))
-  //        if (cmp != 0) return cmp
-  //      }
-  //
-  //      return x.length compare y.length
-  //    }
-  //  }
-  //
-  //  object InstanceOrdering extends Ordering[Instance] {
-  //
-  //    object StateOrder extends ArrayOrdering[Int] {
-  //      val ord = Ordering[Int]
-  //    }
-  //
-  //    override def compare(x: Instance, y: Instance): Int =
-  //      StateOrder.compare(x.states, y.states)
-  //  }
-
-  /**
-   * Maps the internal ID to external ID based on the implementation in SparseDataSet
-   */
-  def getInternalToExternalIDMapping(sparseDataSet: SparseDataSet): Map[Integer, Int] = {
-    def internalToExternal(internal: Integer): Int =
-      sparseDataSet._mapNameToIndex.get(sparseDataSet._item_mapping.toOriginalID(internal))
-
-    sparseDataSet.SDataSet.allItems.asScala.map(id => id -> internalToExternal(id)).toMap
-  }
-
-  def convertToDataWeights(sparseData: SparseDataSet, dataSet: DataSet): DataWeights = {
+  def convertToDataCases(sparseData: SparseDataSet): DataCases = {
     val size = sparseData.getNumOfDatacase
-    val order = Range(0, size).toIndexedSeq
-    convertToDataWeights(sparseData, dataSet, size, 0, order,
-      getInternalToExternalIDMapping(sparseData))
+    val order = Range(0, size)
+    convertToDataCases(sparseData, size, 0, order, getInternalToExternalIDMapping(sparseData))
   }
 
-  //  private def updateData(data: DataWeights,
-  //                         dataSet: DataSet, states: States, additionalWeight: Double) = {
-  ////    data.put(states, data.getOrElse(states, 0d) + 1)
-  ////    data
-  ////    data.update(states, data.getOrElse(states, 0d) + 1)
-  //
-  //    val datacase = data.getOrElseUpdate(states, DataCase.construct(dataSet, states, 0))
-  //    datacase.setWeight(datacase.getWeight + additionalWeight)
-  //  }
-
-  def convertToDataWeights(sparseData: SparseDataSet, dataSet: DataSet,
-                           batchSize: Int, start: Int,
-                           order: IndexedSeq[Int], intToExtID: Map[Integer, Int]): DataWeights = {
+  def convertToDataCases(sparseData: SparseDataSet,
+                         batchSize: Int, start: Int,
+                         order: IndexedSeq[Int],
+                         intToExtID: Map[Integer, Int]): DataCases = {
     val length = sparseData._VariablesSet.size
 
-    val weights = new DataWeights(dataSet)
-
-    for (i <- start until start + batchSize) {
+    def getStates(i: Int) = {
       val states = Array.fill(length)(0)
 
       val row = sparseData.SDataSet.userMatrix.get(order(i))
@@ -411,13 +216,80 @@ object DataOps {
         states(intToExtID(internal_ID)) = 1
       }
 
-      weights.updateData(states, 1)
+      (states, 1.0)
     }
 
-    weights
+    convertToDataCases(batchSize, start, getStates)
+  }
+
+  def convertToDataCases(batchSize: Int, start: Int,
+                         retrieve: (Int) => (States, Double)): DataCases = {
+    (start until start + batchSize)
+      .map(i => Singleton(() => retrieve(i)).asInstanceOf[DataCases])
+      .par
+      .reduce(DataCases.merge)
+  }
+
+
+  def checkMissing(states: States) = states.exists(_ == DataSet.MISSING_VALUE)
+
+  /**
+   * Maps the internal ID to external ID based on the implementation in SparseDataSet
+   */
+  def getInternalToExternalIDMapping(sparseDataSet: SparseDataSet): Map[Integer, Int] = {
+    def internalToExternal(internal: Integer): Int =
+      sparseDataSet._mapNameToIndex.get(sparseDataSet._item_mapping.toOriginalID(internal))
+
+    sparseDataSet.SDataSet.allItems.asScala.map(id => id -> internalToExternal(id)).toMap
   }
 
   def convertToDataSet(sparseData: SparseDataSet): DataSet = {
-    new DataSetBuilder().addTo(sparseData).build(sparseData._VariablesSet)
+    convertToDataCases(sparseData).buildDataSet(sparseData._VariablesSet)
+  }
+
+  def project(dataSet: DataSet, subset: util.List[Variable]): DataSet = {
+    // enforce ordering of the variables
+    val result = new DataSet(subset.toArray(Array.ofDim[Variable](subset.size())))
+
+    val map = result.getVariables.map(
+      v => dataSet.getVariables.indexWhere(_.getName == v.getName))
+
+    def getProjection(i: Int): (States, Double) = {
+      val states = Array.fill(subset.size())(0)
+      val c = dataSet.getData.get(i)
+      (map.map(c.getStates()).toArray, c.getWeight)
+    }
+
+    val cases = convertToDataCases(dataSet.getData.size, 0, getProjection)
+    cases.buildDataSet(result)
+  }
+
+  def sampleWithReplacement(dataSet: DataSet, sampleSize: Int): DataSet = {
+    val random = new Random()
+    sampleWithReplacement(dataSet, sampleSize, random.nextDouble)
+  }
+
+  /**
+   * Generate the training data of the given size from the current data. The
+   * method is sample from the current data with replacement. No side effect
+   * on the input.
+   */
+  def sampleWithReplacement(dataSet: DataSet, sampleSize: Int, generator: () => Double): DataSet = {
+    val cases = dataSet.getData
+
+    val cummulativeWeights =
+      cases.asScala.map(_.getWeight).scanLeft(0.0)(_ + _).toIndexedSeq
+
+    def draw(): States = {
+      val threshold = generator() * dataSet.getTotalWeight
+      cummulativeWeights.search(threshold) match {
+        case Found(i) =>
+          cases.get(i).getStates
+        case InsertionPoint(i) =>
+          cases.get(i - 1).getStates
+      }
+    }
+
+    convertToDataCases(sampleSize, 0, _ => (draw(), 1.0)).buildDataSet(dataSet.getVariables)
   }
 }

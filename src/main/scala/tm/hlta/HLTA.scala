@@ -97,19 +97,26 @@ object HLTA {
   
   def main(args: Array[String]){
     val conf = new Conf(args)
-    
-    val data = Reader.readData(conf.data(), ldaVocabFile = conf.ldaVocab.getOrElse(""))
-    
-    val _structLearnSize = if(conf.structUseAll()) data.size() else conf.structLearnSize()
+
+    val (sparseData, dataSize) = readSparseDataAndSize(conf.data(), conf.ldaVocab.getOrElse(""))
+
+    val _structLearnSize = if(conf.structUseAll()) dataSize else conf.structLearnSize()
     val noBridging = !conf.bridging()
       
     val builder = new clustering.StepwiseEMHLTA()
-    builder.initialize(data.toTupleSparseDataSet(), conf.emMaxStep(), conf.emNumRestart(), conf.emThreshold(), conf.udThreshold(), 
+    builder.initialize(sparseData, conf.emMaxStep(), conf.emNumRestart(), conf.emThreshold(), conf.udThreshold(),
         conf.outputName(), conf.maxIsland(), conf.maxTop(), 
         conf.globalBatchSize(), conf.globalMaxEpochs(), conf.globalMaxEmSteps(), 
         noBridging, _structLearnSize, conf.maxCore(), conf.parallelFinding(),
         conf.ctThreshold.getOrElse(Double.MinValue), conf.ctThreshold.isEmpty)
+    // data = null                   // try to release memory
     builder.IntegratedLearn()
+  }
+
+  // separate into a new function to try to allow the release of data from memory
+  def readSparseDataAndSize(dataFile: String, ldaVocabFile: String = null) = {
+    val data = Reader.readData(dataFile, ldaVocabFile = ldaVocabFile)
+    (data.toTupleSparseDataSet(), data.size())
   }
   
   implicit class LTMMethods(model: LTM){

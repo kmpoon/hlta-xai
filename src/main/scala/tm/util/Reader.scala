@@ -1,21 +1,27 @@
 package tm.util
 
 import java.io.FileInputStream
+
 import org.latlab.io.bif.BifParser
 import org.latlab.model.LTM
 import org.latlab.util.DataSet
 import weka.core.converters.ConverterUtils.DataSource
 import weka.core.Instances
 import org.latlab.util.Variable
+
 import collection.JavaConversions._
 import weka.core.Attribute
 import java.util.ArrayList
+
 import org.slf4j.LoggerFactory
+
 import scala.Range
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Paths}
 import java.io.InputStream
+
 import org.apache.commons.compress.compressors.CompressorStreamFactory
 import java.io.BufferedInputStream
+import java.util
 
 object BifProperties {
   val ReservedWords = List("variable", "network", "type")
@@ -56,7 +62,7 @@ object Reader {
     def toData() = {
       def convert(a: Attribute) = {
         val states = (0 until a.numValues).map(a.value)
-        new Variable(a.name, new ArrayList(states))
+        new Variable(a.name, new util.ArrayList(states))
       }
 
       val attributes = getAttributes()
@@ -85,6 +91,16 @@ object Reader {
 
   def readARFF(dataFile: String) = readARFF_native(dataFile).toData()
 
+  def createStreamWithPossibleCompression(file: String): InputStream = {
+    val input = new FileInputStream(file)
+    try {
+      new CompressorStreamFactory()
+        .createCompressorInputStream(new BufferedInputStream(input))
+    } catch {
+      case _: Throwable => input
+    }
+  }
+
   def readARFF_native(dataFile: String): Instances = {
     val input = if (dataFile.endsWith(".arff"))
       new FileInputStream(dataFile)
@@ -98,7 +114,8 @@ object Reader {
   def isArffFile(dataFile: String) =
     dataFile.endsWith(".arff") || dataFile.endsWith(".arff.gz") || dataFile.endsWith(".arff.bz2")
 
-  def readTuple(dataFile: String) = TupleReader.read(dataFile)
+  def readTuple(dataFile: String) =
+    TupleReader.read(createStreamWithPossibleCompression(dataFile))
 
   def readLda(dataFile: String, vocabFile: String) = LdaReader.read(dataFile, vocabFile)
 
@@ -119,7 +136,9 @@ object Reader {
     }else{
       if(isArffFile(dataFile))
         readARFF_native(dataFile).toData()
-      else if(dataFile.endsWith(".sparse.txt"))
+      else if(dataFile.endsWith(".sparse.txt")
+        || dataFile.endsWith(".sparse.txt.gz")
+      || dataFile.endsWith(".sparse.txt.bz2"))
         readTuple(dataFile)
       else if(dataFile.endsWith(".lda.txt")){
         if(ldaVocabFile==null||ldaVocabFile.isEmpty) throw new Exception("Missing lda vocabulary file")

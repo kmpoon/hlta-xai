@@ -1,9 +1,12 @@
 package tm.util
 
+import java.io.InputStream
+
 import scala.io.Source
 import tm.util.Data.SparseInstance
 import org.latlab.util.Variable
 import java.util.ArrayList
+
 import scala.collection.mutable.Map
 import scala.collection.mutable.MutableList
 
@@ -13,12 +16,12 @@ import scala.collection.mutable.MutableList
  */
 object TupleReader {
 
-  def read(filename: String) = {
+  def read(input: InputStream) = {
     val variables = Map[String,Int]()
     val instances = Map[String,SparseInstance]()
     val order = MutableList[String]()
 
-    val reader = Source.fromFile(filename)
+    val reader = Source.fromInputStream(input)
     var currDocId = ""
     var firstLine = true
     val currDocVars = Map[Int,Int]()

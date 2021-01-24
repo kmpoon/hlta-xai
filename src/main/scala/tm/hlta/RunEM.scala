@@ -56,7 +56,8 @@ object EM{
   }
 }
 
-object StepwiseEM{
+@deprecated
+object StepwiseEMObsolete{
   
   private class DataOrSparseDataSet[T]
   private object DataOrSparseDataSet {

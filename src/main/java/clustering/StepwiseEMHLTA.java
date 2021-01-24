@@ -547,38 +547,38 @@ public class StepwiseEMHLTA {
 		CurrentModel.saveAsBif(_modelname + ".beforeLearning.bif");
 
 		// LP: Remove EM Estimation
+//		System.out.println("Model construction is completed.");
+//		CurrentModel = estimate(_OrigSparseData, CurrentModel);
 
-//		System.out.println("Model construction is completed. EM parameter estimation begins...");
-//
-//		ParallelStepwiseEmLearner emLearner = new ParallelStepwiseEmLearner();
-//		emLearner.setMaxNumberOfSteps(_globalEMmaxSteps);
-//		emLearner.setNumberOfRestarts(1);
-//		emLearner.setReuseFlag(true);
-//		emLearner.setThreshold(_hyperParam._emThreshold);
-//	    emLearner.setBatchSize(_sizeBatch);
-//	    emLearner.setMaxNumberOfEpochs(_maxEpochs);
-//
-//		long startGEM = System.currentTimeMillis();
-//		CurrentModel = (LTM)emLearner.em(CurrentModel, _OrigSparseData);
-//
-//		System.out.println("--- Global EM Time subroutine4: "
-//				+ (System.currentTimeMillis() - startGEM) + " ms ---");
-//
-//		System.out.println("--- Total Time: "
-//				+ (System.currentTimeMillis() - start) + " ms ---");
-//
-//		long startSaveModel = System.currentTimeMillis();
-//
-//		CurrentModel.saveAsBif(_modelname + ".beforeStateReordering.bif");
+
+		System.out.println("--- Total Time: "
+				+ (System.currentTimeMillis() - start) + " ms ---");
+
+		long startSaveModel = System.currentTimeMillis();
+
+		CurrentModel.saveAsBif(_modelname + ".beforeStateReordering.bif");
 		// rename latent variables, reorder the states.
 		CurrentModel = postProcessingModel(CurrentModel);
 
 		// output final model.
 		CurrentModel.saveAsBif(_modelname + ".bif");
-//		System.out.println("--- PostProcessing and Save Model Time: "
-//				+ (System.currentTimeMillis() - startSaveModel) + " ms ---");
+		System.out.println("--- PostProcessing and Save Model Time: "
+				+ (System.currentTimeMillis() - startSaveModel) + " ms ---");
 		
 		return CurrentModel;
+	}
+
+	public LTM estimate(SparseDataSet sparseData, LTM model) {
+		System.out.println("EM parameter estimation begins...");
+
+		long startGEM = System.currentTimeMillis();
+		model = ParallelStepwiseEmLearner.run(sparseData, model, 1, true,
+				_hyperParam._emThreshold, _globalEMmaxSteps, _sizeBatch, _maxEpochs);
+
+		System.out.println("--- Global EM Time subroutine4: "
+				+ (System.currentTimeMillis() - startGEM) + " ms ---");
+
+		return model;
 	}
 
     private void print_mis(ArrayList<double[]> mis, ArrayList<Variable> Variables) {

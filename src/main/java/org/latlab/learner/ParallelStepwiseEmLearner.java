@@ -1,5 +1,5 @@
 /**
- * EmLearner.java 
+ * EmLearner.java
  * Copyright (C) 2006 Tao Chen, Kin Man Poon, Yi Wang, and Nevin L. Zhang
  */
 package org.latlab.learner;
@@ -13,6 +13,7 @@ import java.util.concurrent.RecursiveAction;
 import org.latlab.graph.AbstractNode;
 import org.latlab.model.BayesNet;
 import org.latlab.model.BeliefNode;
+import org.latlab.model.LTM;
 import org.latlab.reasoner.CliqueTreePropagation;
 import org.latlab.util.DataSet;
 import org.latlab.util.DataSet.DataCase;
@@ -27,10 +28,10 @@ import org.latlab.util.Variable;
  * adopted to avoid local maxima. You need to create an instance of
  * <code>EmLearner</code> and tune the settings. You can then use this instance
  * to train different BNs with different data sets with the same setting.
- * 
+ *
  *
  * @author  Yi Wang, Kinman Poon, Peixian Chen
- * 
+ *
  */
 public class ParallelStepwiseEmLearner {
 
@@ -38,12 +39,12 @@ public class ParallelStepwiseEmLearner {
 	 * the number of epochs ( how many times the entire dataset should be gone through)
 	 */
 	protected int _nMaxEpochs;
-	
+
 	/**
 	 * the size of minibatches
 	 */
 	protected int _sizeBatch;
-	
+
 	/**
 	 * the temporary statistics;
 	 */
@@ -103,13 +104,27 @@ public class ParallelStepwiseEmLearner {
 
 	private static ForkJoinPool threadPool = null;
 
+    public static LTM run(SparseDataSet sparseData, org.latlab.model.LTM model,
+                          int numRestarts, boolean reuse, double threshold,
+                          int maxSteps, int batchSize, int maxEpochs) {
+        ParallelStepwiseEmLearner emLearner = new ParallelStepwiseEmLearner();
+        emLearner.setMaxNumberOfSteps(maxSteps);
+        emLearner.setNumberOfRestarts(numRestarts);
+        emLearner.setReuseFlag(reuse);
+        emLearner.setThreshold(threshold);
+        emLearner.setBatchSize(batchSize);
+        emLearner.setMaxNumberOfEpochs(maxEpochs);
+
+        return (LTM) emLearner.em(model, sparseData);
+    }
+
 	/**
 	 * Selects a good starting point using Chickering and Heckerman's strategy.
 	 * Note that this restarting phase will terminate midway if the maximum
 	 * number of steps is reached. However, it will not terminate if the EM
 	 * algorithm already converges on some starting point. That makes things
 	 * complicated.
-	 * 
+	 *
 	 * @param bayesNet
 	 *            input BN.
 	 * @param dataSet
@@ -211,7 +226,7 @@ public class ParallelStepwiseEmLearner {
 	/**
 	 * Returns an optimized BN with respect to the specified data set. Note that
 	 * the argument BN will not change.
-	 * 
+	 *
 	 * @param bayesNet
 	 *            BN to be optimized.
 	 * @param dataSet
@@ -229,8 +244,8 @@ public class ParallelStepwiseEmLearner {
 		// selects a good starting point
 		//CliqueTreePropagationGroup ctps =chickeringHeckermanRestart(bayesNet, dataSet);
 		BayesNet copy = bayesNet.clone();
-		CliqueTreePropagationGroup ctps = CliqueTreePropagationGroup.constructFromModel((BayesNet)copy, getForkJoinPool().getParallelism());	
-		
+		CliqueTreePropagationGroup ctps = CliqueTreePropagationGroup.constructFromModel((BayesNet)copy, getForkJoinPool().getParallelism());
+
 		// runs EM steps until convergence
 	/*	double loglikelihood;
 		bayesNet = ctps.model;
@@ -249,7 +264,7 @@ public class ParallelStepwiseEmLearner {
 			}
 			if(bayesNet.getLoglikelihood(denseData) - loglikelihood > _threshold) break;
 		}*/
-		
+
 		// runs EM steps until convergence
 		double loglikelihood = 0;
 		double currentloglikelihood  = 0;
@@ -266,11 +281,11 @@ public class ParallelStepwiseEmLearner {
 				currentloglikelihood = bayesNet.getLoglikelihood(denseData);
 				System.out.println("Currentloglikelihood: " + currentloglikelihood);
 				if(Math.abs(currentloglikelihood - loglikelihood) < _threshold||_nSteps>= _nMaxSteps) break;
-				
+
 			}
 			if(Math.abs(currentloglikelihood - loglikelihood) < _threshold||_nSteps>= _nMaxSteps) break;
 		}
-		
+
 		// System.out.println("=== Elapsed Time: "
 		// + (System.currentTimeMillis() - start) + " ms ===, and steps"
 		// + _nSteps);
@@ -307,8 +322,8 @@ public class ParallelStepwiseEmLearner {
 		// sufficient statistics for each node
 		public final HashMap<Variable, Function> suffStatstemp =
 				new HashMap<Variable, Function>();
-		
-		
+
+
 		private double loglikelihood = 0;
 
 		// loglikelihood that is computed in an alternative way. In particular,
@@ -380,9 +395,9 @@ public class ParallelStepwiseEmLearner {
 					if (context.nonUpdateNodes != null
 							&& context.nonUpdateNodes.contains(var.getName()))
 						continue;
-					
+
 					Function fracWeight = ctp.computeFamilyBelief(var);
-					
+
 					fracWeight.multiply(weight);
 
 					addToSufficientStatistics(suffStatstemp, var, fracWeight);
@@ -417,7 +432,7 @@ public class ParallelStepwiseEmLearner {
 	 * Runs one EM step on the specified BN using the specified CTP as the
 	 * inference algorithm and returns the loglikelihood of the BN associated
 	 * with the input CTP.
-	 * 
+	 *
 	 * @param ctp
 	 *            CTP for the BN to be optimized.
 	 * @param dataSet
@@ -450,7 +465,7 @@ public class ParallelStepwiseEmLearner {
 			if (suffStats == null) {
 				System.out.println("suffStats == null");
 			}*/
-			
+
 			suffStats.normalize(bNode.getVariable());
 			bNode.setCpt(suffStats);
 		}
@@ -493,10 +508,10 @@ public class ParallelStepwiseEmLearner {
 				_suffStatsAll.put(variable, f);
 			}
 	}
-	
+
 	/**
 	 * Returns the maximum number of steps allowed in this EM algorithm.
-	 * 
+	 *
 	 * @return the maximum number of steps.
 	 */
 	public final int getMaxNumberOfSteps() {
@@ -505,7 +520,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Returns the number of restarts of this EM algorithm.
-	 * 
+	 *
 	 * @return the number of restarts.
 	 */
 	public final int getNumberOfRestarts() {
@@ -515,7 +530,7 @@ public class ParallelStepwiseEmLearner {
 	/**
 	 * Returns <code>true</code> if we will reuse the parameters of the input BN
 	 * as a starting point.
-	 * 
+	 *
 	 * @return <code>true</code> if we will reuse the parameters of the input BN
 	 *         as a starting point.
 	 */
@@ -525,7 +540,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Returns the number of elapsed steps in last EM run.
-	 * 
+	 *
 	 * @return the number of elapsed steps in last EM run.
 	 */
 	public final int getNumberOfSteps() {
@@ -534,7 +549,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Returns the threshold of this EM algorithm.
-	 * 
+	 *
 	 * @return the threshold.
 	 */
 	public final double getThreshold() {
@@ -543,7 +558,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Returns the method used to avoid local maxima.
-	 * 
+	 *
 	 * @return localMaximaEscapeMethod = "ChickeringHeckerman" or
 	 *         "MultipleRestarts"
 	 */
@@ -553,7 +568,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Reutrns the number of preSteps when using "MultipleRestarts" method.
-	 * 
+	 *
 	 * @return
 	 */
 	public int getNumberOfPreSteps() {
@@ -562,7 +577,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Returns the method used to avoid local maxima.
-	 * 
+	 *
 	 * @return localMaximaEscapeMethod = "ChickeringHeckerman" or
 	 *         "MultipleRestarts"
 	 */
@@ -576,7 +591,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Set the number of preSteps when using "MultipleRestarts" method.
-	 * 
+	 *
 	 * @return
 	 */
 	public void setNumberOfPreSteps(int nPreSteps) {
@@ -588,7 +603,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Replaces the maximum number of steps allowed in this EM algorithm.
-	 * 
+	 *
 	 * @param nMaxSteps
 	 *            new maximum number of steps.
 	 */
@@ -601,7 +616,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Replaces the number of restarts of this EM algorithm.
-	 * 
+	 *
 	 * @param nRestarts
 	 *            new number of restarts.
 	 */
@@ -612,22 +627,22 @@ public class ParallelStepwiseEmLearner {
 		_nRestarts = nRestarts;
 	}
 
-	
-	
+
+
 	/**
 	 * Set the maximum number of epochs
-	 * 
+	 *
 	 * @param nMaxSteps
 	 */
-	
+
 	public final void setMaxNumberOfEpochs(int nMaxEpochs) {
 		// maximum number of steps must be positive
 		assert nMaxEpochs > 0;
 
 		_nMaxEpochs = nMaxEpochs;
 	}
-	
-	
+
+
 	/**
 	 * Set the batch size
 	 * @param sizeBatch
@@ -635,14 +650,14 @@ public class ParallelStepwiseEmLearner {
 	public final void setBatchSize(int sizeBatch){
 		// the batch size much be positive
 		assert sizeBatch >  0;
-		
+
 		_sizeBatch = sizeBatch;
 	}
 
 	/**
 	 * Replaces the flag that indicates whether we will reuse the parameters of
 	 * the input BN as a starting point.
-	 * 
+	 *
 	 * @param reuse
 	 *            new flag.
 	 */
@@ -652,7 +667,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Replaces the threshold of this EM algorithm.
-	 * 
+	 *
 	 * @param threshold
 	 *            new threshold.
 	 */
@@ -665,7 +680,7 @@ public class ParallelStepwiseEmLearner {
 
 	/**
 	 * Reset the number of initial iterations of emStep().
-	 * 
+	 *
 	 * @param threshold
 	 *            new threshold.
 	 */

@@ -68,7 +68,7 @@ public class StepwiseEMHLTA {
 	/**
 	 * Original data.
 	 */
-//	private SparseDataSet _OrigSparseData;
+	private SparseDataSet _OrigSparseData;
 	
 	private DataSet _OrigDenseData;
 
@@ -107,6 +107,8 @@ public class StepwiseEMHLTA {
 	 * The maximum number of core on one machine
 	 */	
 	private int _MaxCoreNumber;
+
+	private boolean _runGlobalEm = false;
 	
 	/**
 	 * The collection of hierarchies. Each hierarchy represents a LCM and is
@@ -362,7 +364,7 @@ public class StepwiseEMHLTA {
 	 * @throws Exception
 	 */
 	public void initialize(SparseDataSet sparseDataSet, int emMaxSteps, int emNumRestarts, double emThreshold, double udThreshold,
-			String modelName, int maxIsland, int maxTop, int batchSize, int maxEpochs, int globalEmMaxSteps, 
+			String modelName, int maxIsland, int maxTop, boolean runGlobalEm, int batchSize, int maxEpochs, int globalEmMaxSteps,
 			boolean noBridging, int structLearnSize, int maxCore, int parallelFinding, double ctThreshold, boolean noCorrelationTest) throws IOException, Exception{
         System.out.println("Start initializing......");
 		// Read the data set
@@ -379,6 +381,8 @@ public class StepwiseEMHLTA {
 		_maxIsland = maxIsland;//Integer.parseInt(args[6]);
 		_islandNotBridging = noBridging;
 		_maxTop = maxTop;//Integer.parseInt(args[7]);
+		if (runGlobalEm)
+			setRunGlobalEm(sparseDataSet);
 		_sizeBatch = batchSize;//Integer.parseInt(args[8]);
 		_maxEpochs = maxEpochs;//Integer.parseInt(args[9]);
 		_globalEMmaxSteps = globalEmMaxSteps;//Integer.parseInt(args[10]);
@@ -401,7 +405,11 @@ public class StepwiseEMHLTA {
 		_hyperParam.set(_EmMaxSteps, _EmNumRestarts, _emThreshold, _islandNotBridging, _maxTop, _maxIsland, _UDthreshold, _CTthreshold, _noCT, _MaxCoreNumber);
 		System.out.println("Finish initializing......");
 	}
-	
+
+	private void setRunGlobalEm(SparseDataSet sparseDataSet) {
+		_OrigSparseData = sparseDataSet;
+		_runGlobalEm = true;
+	}
 	
 	public void testtest(String[] args) throws IOException, Exception{
 		 _model = new LTM();
@@ -545,11 +553,12 @@ public class StepwiseEMHLTA {
 		}
 			
 		CurrentModel.saveAsBif(_modelname + ".beforeLearning.bif");
+		System.out.println("Model construction is completed.");
 
-		// LP: Remove EM Estimation
-//		System.out.println("Model construction is completed.");
-//		CurrentModel = estimate(_OrigSparseData, CurrentModel);
-
+		// LP: Can skip global EM (by default) if only the structure is useful.
+		if (_runGlobalEm) {
+			CurrentModel = estimate(_OrigSparseData, CurrentModel);
+		}
 
 		System.out.println("--- Total Time: "
 				+ (System.currentTimeMillis() - start) + " ms ---");

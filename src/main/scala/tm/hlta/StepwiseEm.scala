@@ -1,7 +1,6 @@
 package tm.hlta
 
 import org.latlab.learner.ParallelStepwiseEmLearner
-import tm.hlta.HLTA.readSparseDataAndSize
 import tm.util.{Arguments, Reader}
 
 object StepwiseEm {
@@ -46,5 +45,7 @@ object StepwiseEm {
     val outputName = conf.model().replaceAll("model\\.bif$", "estimated-model.bif")
     estimatedModel.saveAsBif(outputName)
     print(s"Output file: $outputName")
+
+    // TODO: This may need post-process (to reorder state) and to smooth parameters
   }
 }

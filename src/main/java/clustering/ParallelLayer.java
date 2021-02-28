@@ -437,7 +437,7 @@ public class ParallelLayer {
 			bestpairs = new HashMap<String, ArrayList<Variable>>();
 			
 			StepwiseEMHLTA.IslandFinding(VariablesSet, varId, splitData, mis,
-					context._hyperParam, bestpairs, hierarchies, Variables, start);
+					context._hyperParam, -1, bestpairs, hierarchies, Variables, start);
 
 			// link the islands.
 			localLatentPosts = new HashMap<Variable, Map<DataCase, Function>>();

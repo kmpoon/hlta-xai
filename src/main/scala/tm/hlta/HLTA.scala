@@ -32,11 +32,11 @@ object HLTA {
 
     val ldaVocab = opt[String](default = None, descr = "LDA vocab file, only required if lda data is provided")
 
-    val maxCore = opt[Int](descr = "Maximum cores for parallel computation. (e.g. 2)", default = Some(2))
+    val maxCore = opt[Int](descr = "Maximum cores for parallel computation. (e.g. 2)", default = Some(1))
     val parallelFinding = opt[Int](descr = "The maximum topic tree level that uses parallel island finding, only affective when maxCore > 1. (e.g. 1)", default = Some(1))
 
     val runGlobalEm = opt[Boolean](descr = "Run Global EM after learning the structure.  Not useful if only the structure is needed.", default = Some(false))
-    val emNumRestart = opt[Int](descr = "Number of restarts in EM (e.g. 5). <paper section 6.1>", default = Some(5))
+    val emNumRestart = opt[Int](descr = "Number of restarts in EM (e.g. 5). <paper section 6.1>", default = Some(16))
     val emThreshold = opt[Double](descr = "Threshold of improvement to stop EM (e.g. 0.01) <paper section 6.1>", default = Some(0.01))
     val udThreshold = opt[Double](descr = "The threshold used in unidimensionality test for constructing islands (e.g. 3). <paper setion 5.2>", default = Some(3))
     val ctThreshold = opt[Double](descr = "The correlation test threshold, high threshold makes island harder to expand.", default = Some(3))
@@ -48,9 +48,9 @@ object HLTA {
     val globalMaxEpochs = opt[Int](descr = "Number of times the whole training dataset has been gone through (e.g. 10). <paper section 7>", default = Some(10))
     val globalMaxEmSteps = opt[Int](descr = "Maximum number of stepwise EM steps (e.g. 128). <paper section 7>", default = Some(128))
 
-    val structLearnSize = opt[Int](descr = "Number of data cases used for building model structure. <paper section 7>", default = Some(10000))
+    val structLearnSize = opt[Int](descr = "Number of data cases used for building model structure. <paper section 7>", default = Some(1000000))
     val structUseAll = opt[Boolean](descr = "Use all data cases for building model structure. <paper section 7>", default = Some(false))
-
+    val structBatchSize = opt[Int](descr = "Batch size to use for UD-Test.  If negative, the original data for structural learning is used.", default = Some(10000))
 
     verify
     checkDefaultOpts()
@@ -83,7 +83,7 @@ object HLTA {
             emMaxStep: Int = 50, emNumRestart: Int = 3, emThreshold: Double = 0.01,
             udThreshold: Double = 3.0, ctThreshold: Option[Double] = None, maxIsland: Int = 15, maxTop: Int = 30, noBridging: Boolean = true,
             globalBatchSize: Int = 500, globalMaxEpochs: Int = 10, globalMaxEmSteps: Int = 100,
-            structLearnSize: Int = 10000, structBatchAll: Boolean = false): LTM = {
+            structLearnSize: Int = 10000, structBatchAll: Boolean = false, structureBatchSize: Int = -1): LTM = {
 
     val _structLearnSize = if (structBatchAll) data.size() else structLearnSize
 
@@ -91,7 +91,7 @@ object HLTA {
     builder.initialize(data.toTupleSparseDataSet(), emMaxStep, emNumRestart, emThreshold, udThreshold,
       modelName, maxIsland, maxTop,
       true, globalBatchSize, globalMaxEpochs, globalMaxEmSteps,
-      noBridging, _structLearnSize, maxCore, parallelFinding,
+      noBridging, _structLearnSize, structureBatchSize, maxCore, parallelFinding,
       ctThreshold.getOrElse(Double.MinValue), ctThreshold.isEmpty)
     builder.IntegratedLearn()
 
@@ -104,13 +104,16 @@ object HLTA {
     val (sparseData, dataSize) = readSparseDataAndSize(conf.data(), conf.ldaVocab.getOrElse(""))
 
     val _structLearnSize = if (conf.structUseAll()) dataSize else conf.structLearnSize()
+    val structBatchSize = conf.structBatchSize()
+    println(s"Parameters for structural learning - sample size: ${_structLearnSize}, batch size: ${structBatchSize}")
+
     val noBridging = !conf.bridging()
 
     val builder = new clustering.StepwiseEMHLTA()
     builder.initialize(sparseData, conf.emMaxStep(), conf.emNumRestart(), conf.emThreshold(), conf.udThreshold(),
       conf.outputName(), conf.maxIsland(), conf.maxTop(),
       conf.runGlobalEm(), conf.globalBatchSize(), conf.globalMaxEpochs(), conf.globalMaxEmSteps(),
-      noBridging, _structLearnSize, conf.maxCore(), conf.parallelFinding(),
+      noBridging, _structLearnSize, structBatchSize, conf.maxCore(), conf.parallelFinding(),
       conf.ctThreshold.getOrElse(Double.MinValue), conf.ctThreshold.isEmpty)
     // data = null                   // try to release memory
     builder.IntegratedLearn()

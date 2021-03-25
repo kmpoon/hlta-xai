@@ -635,36 +635,13 @@ public class StepwiseEMHLTA {
 		LTM latentTree;
 		Map<Variable, Map<DataCase, Function>> lptmp = new HashMap<Variable, Map<DataCase, Function>>();
 
-		if (!_useOnlySerialVersion && level <= _parallelIslandFindingLevel) {
-			System.out.println("In Parallel(MultiCode) mode");
-			// New Version: You can run parallel mode or serial mode. Serial mode is a special case of parallel mode
-			ParallelLayer pl = new ParallelLayer();
-			
-			/*for (DataCase d : data.getData()) {
-	      		System.out.println("in FastLTA_flat_handle data: " + d.toString());
-      		}*/
-			pl.parallelLayer(_OrigDenseData, data, _hyperParam, _Variables); // latentTree and hardAssign should get value from the parallelLayer
-
-			// summary the variables from the reduce procedure of parallel
-			latentTree = pl.getTmpTree();
-			_hierarchies = pl.getHierarchies();
-			_latentPosts = pl.getGloballLatentPosts(); // getLocalLatentPosts when need island bridging
-			_bestpairs = pl.getBestPairs();
-			
-			/* System.out.println("latentTree size in FastLTA_flat_handle: " + latentTree.getInternalVars().size());
-			System.out.println("_hierarchies size in FastLTA_flat_handle: " + _hierarchies.keySet().size());
-			System.out.println("_bestpairs size in FastLTA_flat_handle: " + _bestpairs.keySet().size());
-			System.out.println("_latentPosts size in FastLTA_flat_handle: " + _latentPosts.size()); */
-
-		} else {
-			System.out.println("In Serial mode");
-			// Serial Version: You can only run serial model
-			// This function is not be used in current version
-			latentTree = FastLTA_flat(data, lptmp);
-			System.out.println("_latentPosts size in FastLTA_flat_handle: " + lptmp.size());
-			_latentPosts = lptmp;
-			System.out.println("_latentPosts size in FastLTA_flat_handle2: " + _latentPosts.size());
-		}
+		System.out.println("In Serial mode");
+		// Serial Version: You can only run serial model
+		// This function is not be used in current version
+		latentTree = FastLTA_flat(data, lptmp);
+		System.out.println("_latentPosts size in FastLTA_flat_handle: " + lptmp.size());
+		_latentPosts = lptmp;
+		System.out.println("_latentPosts size in FastLTA_flat_handle2: " + _latentPosts.size());
 
 		return latentTree;
 	}

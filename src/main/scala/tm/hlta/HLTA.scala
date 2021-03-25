@@ -56,47 +56,6 @@ object HLTA {
     checkDefaultOpts()
   }
 
-  /**
-   * Model building, building a hierarchical latent tree
-   * maxCore: Maximum cores for parallel computation. (e.g. 2)
-   * parallelFinding: The maximum topic tree level that uses parallel island finding, only affective when maxCore > 1. (e.g. 1)
-   * Local EM parameters:
-   * emMaxSteps: Maximum number of EM steps (e.g. 50).
-   * emNumRestarts: Number of restarts in EM (e.g. 5).
-   * emThreshold: Threshold of improvement to stop EM (e.g. 0.01).
-   * Model construction parameters:
-   * udThreshold: The threshold used in unidimensionality test for constructing islands (e.g. 3).
-   * ctThreshold: Correlation test threshold. A test to judge if a variable is correlated w/ the island. Make this None to skip the test. (e.g. None)
-   * maxIsland: Maximum number of variables in an island (e.g. 10).
-   * maxTop: Maximum number of variables in top level (e.g. 15).
-   * noBridging: Disable island bridging (e.g. true)
-   * structLearnSize: Number of data cases used for building model structure.
-   * Global parameters:
-   * globalBatchSize: Number of data cases used in each stepwise EM step (e.g. 1000).
-   * globalMaxEpochs: Number of times the whole training dataset has been gone through (e.g. 10).
-   * globalMaxEmSteps: Maximum number of stepwise EM steps (e.g. 128).
-   *
-   * Parameter follows the suggested numbers in cluster.StepwiseEMHLTA
-   */
-  def apply(data: Data, modelName: String, ldaVocab: String = null,
-            maxCore: Int = 2, parallelFinding: Int = 1,
-            emMaxStep: Int = 50, emNumRestart: Int = 3, emThreshold: Double = 0.01,
-            udThreshold: Double = 3.0, ctThreshold: Option[Double] = None, maxIsland: Int = 15, maxTop: Int = 30, noBridging: Boolean = true,
-            globalBatchSize: Int = 500, globalMaxEpochs: Int = 10, globalMaxEmSteps: Int = 100,
-            structLearnSize: Int = 10000, structBatchAll: Boolean = false, structureBatchSize: Int = -1): LTM = {
-
-    val _structLearnSize = if (structBatchAll) data.size() else structLearnSize
-
-    val builder = new clustering.StepwiseEMHLTA()
-    builder.initialize(data.toTupleSparseDataSet(), emMaxStep, emNumRestart, emThreshold, udThreshold,
-      modelName, maxIsland, maxTop,
-      true, globalBatchSize, globalMaxEpochs, globalMaxEmSteps,
-      noBridging, _structLearnSize, structureBatchSize, maxCore, parallelFinding,
-      ctThreshold.getOrElse(Double.MinValue), ctThreshold.isEmpty)
-    builder.IntegratedLearn()
-
-    Reader.readModel(modelName + ".bif")
-  }
 
   def main(args: Array[String]) {
     val conf = new Conf(args)

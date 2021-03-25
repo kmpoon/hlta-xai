@@ -55,10 +55,10 @@ object Doc2VecAssignment {
     if(conf.data().endsWith(".hlcm"))
       throw new Exception("Invalid data format")
      
-     run(conf.model(), conf.data(), conf.ldaVocab.getOrElse(""), conf.outputName(), conf.decimalPlaces(), conf.layer.toOption, conf.confidence(), conf.keywords(), conf.broad())
+     run(conf.model(), conf.data(), conf.ldaVocab.getOrElse(""), conf.outputName(), conf.decimalPlaces(), conf.layer.toOption, conf.confidence(), conf.keywords())
   }
 
-  def run(modelFile: String, dataFile: String, ldaVocabFile: String, outputName: String, decimalPlaces: Int, layer: Option[List[Int]], threshold : Double, keywords: Int, broad : Boolean): Unit = {
+  def run(modelFile: String, dataFile: String, ldaVocabFile: String, outputName: String, decimalPlaces: Int, layer: Option[List[Int]], threshold : Double, keywords: Int): Unit = {
     val topicDataFile = getFileName(outputName, "arff")
     val precomputedTopicData = if (Files.exists(Paths.get(topicDataFile))) {
       logger.info("Topic data file ({}) exists.  Check if variable matches.", topicDataFile)
@@ -95,11 +95,8 @@ object Doc2VecAssignment {
         //model.synchronize(binaryData.variables.toArray) //Since variable is always with cardinality of 2, no need this line anymore
     
         logger.info("Computing topic distribution")
-        val topicData = if(broad)
-          computeBroadTopicData(model, binaryData, layer)
-        else
-          computeNarrowTopicData(model, binaryData, layer, keywords)
-  
+        val topicData = computeBroadTopicData(model, binaryData, layer)
+
         logger.info("Saving topic data")
   
         val df = new DecimalFormat("#0." + "#" * decimalPlaces)
@@ -144,8 +141,7 @@ object Doc2VecAssignment {
     new Data(variables.toIndexedSeq, topicProbabilities.toIndexedSeq)
   }
   
-  def computeNarrowTopicData(model: LTM, binaryData: Data, layer: Option[List[Int]], keywords: Int): Data = new NarrowTopicExtractor(model, binaryData, layer, keywords).apply()
-    
+
   implicit final class toCatalog(data: Data){
     /**
      * Generates a list of documents for each topic.
@@ -173,94 +169,6 @@ object Doc2VecAssignment {
   
 }
 
-/**
- * Compute P(z|d) by re-defining each topic as a latent variable of an LCM
- * An LCM is a 2 layer tree, root is the latent variable, leaves are the topic keywords
- * 
- * For detail, see Peixian's paper section 8.2
- */
-private class NarrowTopicExtractor(model: LTM, data: Data, layer: Option[List[Int]], keywords: Int) extends ExtractNarrowTopics_LCM {
-  // Holds topic probabilities (value) for each document for each latent variable (key)
-  val topicProbabilities = scala.collection.mutable.Map.empty[String, IndexedSeq[Double]]
-  val varLevels = model.getVariableNameLevels
-  val _layer = if(layer.isDefined)  layer.get.map{l => if(l<=0) l+model.getHeight-1 else l} else null
-
-  def apply(): Data = {
-    initialize(model, data.toHlcmDataSet, Array("", "", "tmp", "no", "no", keywords.toString))
-    extractTopics()
-    convertProbabilities()
-  }
-
-  def logCompute(latent: String) = logger.debug("Computing probabilities for {}", latent)
-  
-  override def extractTopicsByCounting(latent: String, observed: ArrayList[Variable]){
-    if(_layer != null && !_layer.contains(varLevels(latent)))
-      return
-      
-    logCompute(latent)
-    
-    val indices = observed.map(data.variables.indexOf).filterNot(_ == -1)
-    val probabilities = data.instances.map { i =>
-      if (indices.map(i.values).find(_ > 0.0).isDefined)
-        1.0
-      else
-        0.0
-    }
-    topicProbabilities += (latent -> probabilities)
-  }
-
-  override def extractTopicsBySubtree(
-    latent: String, setVars: ArrayList[Variable],
-    setNode: java.util.Set[DirectedNode], subtree: LTM) {
-    if(_layer != null && !_layer.contains(varLevels(latent)))
-      return
-    
-    logCompute(latent)
-
-    extractTopicsBySubtree1(latent, setNode, subtree);
-    val subtree1 = extractTopicsBySubtree2(latent, setNode, subtree);
-
-    // find only observed variables
-    val (observed, indices) = setNode.map { n =>
-      val v = n.asInstanceOf[BeliefNode].getVariable
-      val index = data.variables.indexOf(v)
-      if (index >= 0) Some(v, index)
-      else None
-    }.collect(_ match {
-      case Some(p) => p
-    }).toArray.unzip
-
-    def getObservedStates(instance: Data.Instance) =
-      indices.map(instance.values).map(v => if (v > 0) 1 else 0)
-
-    val latentVariable = model.getNodeByName(latent).getVariable
-
-    // check 
-    val test = observed.map(subtree1.getNode)
-    assert(test.forall(_ != null))
-
-    val ctp = new CliqueTreePropagation(subtree1);
-    val probabilities = data.instances.map { i =>
-      ctp.setEvidence(observed, getObservedStates(i))
-      ctp.propagate();
-      ctp.computeBelief(latentVariable).getCells()(1)
-    }
-
-    topicProbabilities += (latent -> probabilities)
-  }
-
-  def convertProbabilities() = {
-    val (names, columns) = topicProbabilities.toArray.unzip
-    val variables = names.map(model.getNodeByName).map(_.getVariable)
-
-    val instances = data.instances.indices.map { i =>
-      Data.DenseInstance(columns.map(_.apply(i)), data.instances(i).weight, name = data.instances(i).name)
-    }
-
-    new Data(variables, instances)
-  }
-
-}
 
 
 /**

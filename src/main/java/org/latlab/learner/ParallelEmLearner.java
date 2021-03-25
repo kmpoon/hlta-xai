@@ -1,4 +1,4 @@
-/**
+/*
  * EmLearner.java 
  * Copyright (C) 2006 Tao Chen, Kin Man Poon, Yi Wang, and Nevin L. Zhang
  */
@@ -366,8 +366,6 @@ public class ParallelEmLearner {
 	 * inference algorithm and returns the loglikelihood of the BN associated
 	 * with the input CTP.
 	 * 
-	 * @param ctp
-	 *            CTP for the BN to be optimized.
 	 * @param dataSet
 	 *            data set to be used.
 	 * @return the loglikelihood of the BN associated with the input CTP.
@@ -572,8 +570,6 @@ public class ParallelEmLearner {
 	/**
 	 * Reset the number of initial iterations of emStep().
 	 * 
-	 * @param threshold
-	 *            new threshold.
 	 */
 	public final void setNumInitIterations(int numInitIterations) {
 		assert numInitIterations >= 0;

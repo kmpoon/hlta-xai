@@ -27,13 +27,10 @@ object HLTA {
         |Please refer to the paper "Latent Tree Models for Hierarchical Topic Detection" for algorithmic details""")
 
     val data = trailArg[String]()
-    val emMaxStep = trailArg[Int](descr = "Maximum number of EM steps (e.g. 50)")
     val outputName = trailArg[String]()
 
-    val ldaVocab = opt[String](default = None, descr = "LDA vocab file, only required if lda data is provided")
 
-    val maxCore = opt[Int](descr = "Maximum cores for parallel computation. (e.g. 2)", default = Some(1))
-    val parallelFinding = opt[Int](descr = "The maximum topic tree level that uses parallel island finding, only affective when maxCore > 1. (e.g. 1)", default = Some(1))
+    val emMaxStep = opt[Int](descr = "Maximum number of EM steps (e.g. 50)", default = Some(200))
 
     val runGlobalEm = opt[Boolean](descr = "Run Global EM after learning the structure.  Not useful if only the structure is needed.", default = Some(false))
     val emNumRestart = opt[Int](descr = "Number of restarts in EM (e.g. 5). <paper section 6.1>", default = Some(16))
@@ -48,9 +45,9 @@ object HLTA {
     val globalMaxEpochs = opt[Int](descr = "Number of times the whole training dataset has been gone through (e.g. 10). <paper section 7>", default = Some(10))
     val globalMaxEmSteps = opt[Int](descr = "Maximum number of stepwise EM steps (e.g. 128). <paper section 7>", default = Some(128))
 
-    val structLearnSize = opt[Int](descr = "Number of data cases used for building model structure. <paper section 7>", default = Some(1000000))
+    val structLearnSize = opt[Int](descr = "Number of data cases used for building model structure. <paper section 7>", default = Some(100000))
     val structUseAll = opt[Boolean](descr = "Use all data cases for building model structure. <paper section 7>", default = Some(false))
-    val structBatchSize = opt[Int](descr = "Batch size to use for UD-Test.  If negative, the original data for structural learning is used.", default = Some(10000))
+    val structBatchSize = opt[Int](descr = "Batch size to use for UD-Test.  If negative, the original data for structural learning is used.", default = Some(5000))
 
     verify
     checkDefaultOpts()
@@ -59,8 +56,9 @@ object HLTA {
 
   def main(args: Array[String]) {
     val conf = new Conf(args)
+    println(conf.summary)
 
-    val (sparseData, dataSize) = readSparseDataAndSize(conf.data(), conf.ldaVocab.getOrElse(""))
+    val (sparseData, dataSize) = readSparseDataAndSize(conf.data())
 
     val _structLearnSize = if (conf.structUseAll()) dataSize else conf.structLearnSize()
     val structBatchSize = conf.structBatchSize()
@@ -72,7 +70,7 @@ object HLTA {
     builder.initialize(sparseData, conf.emMaxStep(), conf.emNumRestart(), conf.emThreshold(), conf.udThreshold(),
       conf.outputName(), conf.maxIsland(), conf.maxTop(),
       conf.runGlobalEm(), conf.globalBatchSize(), conf.globalMaxEpochs(), conf.globalMaxEmSteps(),
-      noBridging, _structLearnSize, structBatchSize, conf.maxCore(), conf.parallelFinding(),
+      noBridging, _structLearnSize, structBatchSize,
       conf.ctThreshold.getOrElse(Double.MinValue), conf.ctThreshold.isEmpty)
     // data = null                   // try to release memory
     builder.IntegratedLearn()

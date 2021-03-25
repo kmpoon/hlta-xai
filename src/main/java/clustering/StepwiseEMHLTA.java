@@ -105,11 +105,6 @@ public class StepwiseEMHLTA {
 	 */
 	private int _maxTop;
 
-	/**
-	 * The maximum number of core on one machine
-	 */
-	private int _MaxCoreNumber;
-
 	private boolean _runGlobalEm = false;
 
 	/**
@@ -139,7 +134,6 @@ public class StepwiseEMHLTA {
 	private int _sizeBatch;
 	private String _sizeFirstBatch = "all"; //this parameter is replaced by _sample_size_for_structure_learn. Just to keep this parameter internally.
 	private boolean _islandNotBridging;
-	private int _parallelIslandFindingLevel;
 	private int _sample_size_for_structure_learn = 10000;
 	private int _batch_size_for_structure_learn = -1;
 
@@ -201,10 +195,9 @@ public class StepwiseEMHLTA {
 		 */
 		double _CTthreshold;
 		boolean _noCT;
-		int _MaxCoreNumber;
 
 		public void set(int EmMaxSteps, int EmNumRestarts, double emThreshold,
-				boolean islandNotBridging, int maxTop, int maxIsland, double UDthreshold, double CTthreshold, boolean noCT, int MaxCoreNumber) {
+				boolean islandNotBridging, int maxTop, int maxIsland, double UDthreshold, double CTthreshold, boolean noCT) {
 
 			_EmNumRestarts = EmNumRestarts;
 			_EmMaxSteps = EmMaxSteps;
@@ -215,7 +208,6 @@ public class StepwiseEMHLTA {
 			_UDthreshold = UDthreshold;
 			_CTthreshold = CTthreshold;
 			_noCT = noCT;
-			_MaxCoreNumber = MaxCoreNumber;
 		}
 		
 		/*public int getEmMaxSteps() {
@@ -240,135 +232,18 @@ public class StepwiseEMHLTA {
 	 * @throws Throwable
 	 */
 
-	public static void main(String[] args) throws Exception {
-		/*boolean useMultiProcess = false;
-		if (useMultiProcess) {
-			System.out.println("input args.length: " + args.length);
-			clustering.StepwiseEMHLTA.MPIDemo(args);
-			int args_num_for_mpi = 3;
-			args = clustering.StepwiseEMHLTA.SwitchArgs(args, args_num_for_mpi);
-			System.out.println("new args.length: " + args.length);
-		}*/
-		//int args_for_mpi = 0;
-		if (args.length != 16 && args.length != 15 && args.length != 2){
-			System.err.println("Usage: java StepwiseEMHLTA trainingdata outputmodel (EmMaxSteps EmNumRestarts EM-threshold UDtest-threshold outputmodel MaxIsland MaxTop GlobalsizeBatch GlobalMaxEpochs GlobalEMmaxsteps IslandNotBridging SampleSizeForstructureLearn MaxCoreNumber serialIslandFindingLevel (CT-threshold)) ");
-			System.exit(1);
-		}
-
-		if(args.length == 16 || args.length == 15 || args.length == 2){
-			clustering.StepwiseEMHLTA Fast_learner = new clustering.StepwiseEMHLTA();
-			Fast_learner.initialize(args);
-
-			Fast_learner.IntegratedLearn();
-		}
-//		if(args.length == 3){
-//			clustering.StepwiseEMHLTA test = new clustering.StepwiseEMHLTA();
-//			test.testtest(args);	
-//		}
-	}
-
-	/**
-	 * Initialize All
-	 *
-	 * @param args
-	 * @throws IOException
-	 * @throws Exception
-	 */
-	public void initialize(String[] args) throws IOException, Exception
-	{
-		SparseDataSet _OrigSparseData = null;
-
-		// _model = new LTM();
-		// Parser parser = new BifParser(new FileInputStream(args[0]),"UTF-8");
-		// parser.parse(_model);
-        System.out.println("Initializing......");
-		// Read the data set
-
-//        if(args.length==0){
-//        	    //_OrigSparseData = new SparseDataSet("./data/SampleData_5000.arff");
-//    	        _OrigSparseData = new SparseDataSet("sample.txt");
-// 			_modelname ="HLTAModel";
-//        } else if(args.length==1){
-//    			_OrigSparseData = new SparseDataSet(args[0]);
-//    			_modelname ="HLTAModel";
-//        }
-//        else 
-        if(args.length==2){
-        		_OrigSparseData = new SparseDataSet(args[0]);
-        		_modelname = args[1];
-        }
-
-		if(args.length==15 || args.length==16){
-			_OrigSparseData = new SparseDataSet(args[0]);
-
-			_EmMaxSteps = Integer.parseInt(args[1]);
-
-			_EmNumRestarts = Integer.parseInt(args[2]);
-
-			_emThreshold = Double.parseDouble(args[3]);
-
-			_UDthreshold = Double.parseDouble(args[4]);
-
-			_modelname = args[5];
-
-			_maxIsland = Integer.parseInt(args[6]);
-			_maxTop = Integer.parseInt(args[7]);
-			_sizeBatch = Integer.parseInt(args[8]);
-			_maxEpochs = Integer.parseInt(args[9]);
-			_globalEMmaxSteps = Integer.parseInt(args[10]);
-			//_sizeFirstBatch = args[11]; (was replaced by _sample_size_for_structure_learn)
-			_islandNotBridging = (Integer.parseInt(args[11]) == 0) ? false : true;
-			_sample_size_for_structure_learn = (Integer.parseInt(args[12]));
-			_MaxCoreNumber = (Integer.parseInt(args[13]));
-			_parallelIslandFindingLevel = (Integer.parseInt(args[14]));
-			if(args.length == 16){
-				_CTthreshold = Double.parseDouble(args[15]);
-				_noCT = false;
-			}else{
-				_noCT = true;
-			}
-			if(_sizeFirstBatch.contains("all")){
-	            _OrigDenseData = _OrigSparseData.getWholeDenseData();
-			}else{
-	            _OrigDenseData = _OrigSparseData.GiveDenseBatch(Integer.parseInt(_sizeFirstBatch));
-			}
-		}else{
-			_EmMaxSteps =50;//10 > not in stepwise EM
-			_EmNumRestarts=3;//5 <
-			_emThreshold=0.01;// paper: not mentioned
-			_UDthreshold=3; // paper: 3
-			_maxIsland = 15;//10 > paper: 15
-			_maxTop =30;//15 > paper: NYT:30 other:20
-			_sizeBatch = 500;//1000 < paper:1000
-			_maxEpochs = 10;//paper:not mentioned, and not usually work
-			_globalEMmaxSteps = 100;//128 < paper:100
-			//_sizeFirstBatch = "all";//8000 > (replaced by _sample_size_for_structure_learn)
-            _OrigDenseData = _OrigSparseData.getWholeDenseData();
-            _islandNotBridging = true;
-			_sample_size_for_structure_learn = 10000;
-            _MaxCoreNumber = 2;
-            _parallelIslandFindingLevel = 1;
-			_noCT = true; //if noCT is true, HLTA does not care about ctThreshold
-		}
-		if (1 == _MaxCoreNumber) {
-			_useOnlySerialVersion = true;
-		}
-		_hyperParam.set(_EmMaxSteps, _EmNumRestarts, _emThreshold, _islandNotBridging, _maxTop, _maxIsland, _UDthreshold, _CTthreshold, _noCT, _MaxCoreNumber);
-	}
-
 	/**
 	 * Added by Leung Chun Fai
 	 * General user call this instead of the other initialize
 	 * Make sure you make this method consistent with the other initialize
 	 * Or otherwise no one gonna use your new code
 	 *
-	 * @param args
 	 * @throws IOException
 	 * @throws Exception
 	 */
 	public void initialize(SparseDataSet sparseDataSet, int emMaxSteps, int emNumRestarts, double emThreshold, double udThreshold,
 			String modelName, int maxIsland, int maxTop, boolean runGlobalEm, int batchSize, int maxEpochs, int globalEmMaxSteps,
-			boolean noBridging, int structLearnSize, int structBatchSize, int maxCore, int parallelFinding, double ctThreshold, boolean noCorrelationTest) throws IOException, Exception{
+			boolean noBridging, int structLearnSize, int structBatchSize, double ctThreshold, boolean noCorrelationTest) throws IOException, Exception{
         System.out.println("Start initializing......");
 		// Read the data set
 		_EmMaxSteps = emMaxSteps;//Integer.parseInt(args[1]);
@@ -392,8 +267,6 @@ public class StepwiseEMHLTA {
 		//_sizeFirstBatch = sizeFirstBatch;//replaced by _sample_size_for_struture_learn
 		_sample_size_for_structure_learn = structLearnSize;
 		_batch_size_for_structure_learn = structBatchSize;
-        _MaxCoreNumber = maxCore;
-        _parallelIslandFindingLevel = parallelFinding;
         _CTthreshold = ctThreshold;
 		_noCT = noCorrelationTest;
 		if(_sizeFirstBatch.contains("all")){
@@ -403,10 +276,8 @@ public class StepwiseEMHLTA {
             _OrigDenseData = sparseDataSet.GiveDenseBatch(Integer.parseInt(_sizeFirstBatch));
 		}
 
-		if (1 == _MaxCoreNumber) {
-			_useOnlySerialVersion = true;
-		}
-		_hyperParam.set(_EmMaxSteps, _EmNumRestarts, _emThreshold, _islandNotBridging, _maxTop, _maxIsland, _UDthreshold, _CTthreshold, _noCT, _MaxCoreNumber);
+		_useOnlySerialVersion = true;
+		_hyperParam.set(_EmMaxSteps, _EmNumRestarts, _emThreshold, _islandNotBridging, _maxTop, _maxIsland, _UDthreshold, _CTthreshold, _noCT);
 		System.out.println("Finish initializing......");
 	}
 
@@ -622,8 +493,6 @@ public class StepwiseEMHLTA {
 	/**
 	 * call FastLTA_flat (parellel or serial)
 	 *
-	 * @param _data
-	 * @param Level
 	 * @return
 	 * @throws UnsupportedEncodingException
 	 * @throws FileNotFoundException
@@ -649,8 +518,6 @@ public class StepwiseEMHLTA {
 	/**
 	 * Build One layer
 	 * This function is not be used in current version
-	 * @param _data
-	 * @param Level
 	 * @return
 	 * @throws UnsupportedEncodingException
 	 * @throws FileNotFoundException
@@ -674,8 +541,6 @@ public class StepwiseEMHLTA {
 	/**
 	 * IslandFinding
 	 *
-	 * @param _data
-	 * @param Level
 	 * @return
 	 * @throws UnsupportedEncodingException
 	 * @throws FileNotFoundException
@@ -1329,9 +1194,6 @@ public class StepwiseEMHLTA {
 		/**
 		 * Computes the mutual information between two discrete variables.
 		 *
-		 * @param discretizedData
-		 * @param v1
-		 * @param v2
 		 * @return
 		 * @throws Exception
 		 */
@@ -1356,8 +1218,6 @@ public class StepwiseEMHLTA {
 		 * Computes a the mutual information between each pair of variables. It
 		 * does not contain any valid value on the diagonal.
 		 *
-		 * @param includeClassVariable
-		 *            whether to include the class variable
 		 * @return mutual information for each pair of variables
 		 */
 		public double[][] computerPairwise() {
@@ -1632,7 +1492,6 @@ public class StepwiseEMHLTA {
 
 	/**
 	 * Stack the results
-	 * @param _data
 	 */
     private LTM BuildHierarchy(LTM OldModel, LTM tree) {
 		long start = System.currentTimeMillis();

@@ -33,8 +33,6 @@ public class EmpiricalMiComputerForBinaryData{
 	 * Computes a the mutual information between each pair of variables. It does
 	 * not contain any valid value on the diagonal.
 	 * 
-	 * @param includeClassVariable
-	 *            whether to include the class variable
 	 * @return mutual information for each pair of variables
 	 */
 	public ArrayList<double[]> computerPairwise() {

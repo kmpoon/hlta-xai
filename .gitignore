@@ -3,6 +3,7 @@
 .cache-tests
 .history
 .idea
+.bsp
 bin
 target
 project/target

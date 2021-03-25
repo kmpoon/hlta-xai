@@ -39,19 +39,10 @@ libraryDependencies ++=
   "com.google.guava" % "guava" % "20.0" ::
 Nil
 
-
-EclipseKeys.withSource := true
-
-EclipseKeys.withJavadoc := true
-
 javacOptions ++= Seq("-encoding", "UTF-8")
 
-javacOptions ++= Seq("-source", "8", "-target", "8")
+javacOptions ++= Seq("-source", "11", "-target", "11")
 
-// EclipseKeys.eclipseOutput := Some("target")
-
-// Compile the project before generating Eclipse files, so that generated .scala or .class files for views and routes are present
-EclipseKeys.preTasks := Seq(compile in Compile)
 
 assemblyJarName in assembly := "HLTA-XAI.jar"
 

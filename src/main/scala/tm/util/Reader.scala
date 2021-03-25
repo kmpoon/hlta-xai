@@ -117,7 +117,6 @@ object Reader {
   def readTuple(dataFile: String) =
     TupleReader.read(createStreamWithPossibleCompression(dataFile))
 
-  def readLda(dataFile: String, vocabFile: String) = LdaReader.read(dataFile, vocabFile)
 
   /**
    * Auto detect file format and cast it to scala Data
@@ -129,8 +128,6 @@ object Reader {
         case "arff" => readARFF(dataFile)
         case "tuple" => readTuple(dataFile)
         case "hlcm" => readHLCM(dataFile)
-        case "lda" => if(ldaVocabFile==null||ldaVocabFile.isEmpty) throw new Exception("Missing lda vocabulary file")
-                      else readLda(dataFile, ldaVocabFile)
         case _ => throw new Exception("Unknown format")
       }
     }else{
@@ -140,10 +137,7 @@ object Reader {
         || dataFile.endsWith(".sparse.txt.gz")
       || dataFile.endsWith(".sparse.txt.bz2"))
         readTuple(dataFile)
-      else if(dataFile.endsWith(".lda.txt")){
-        if(ldaVocabFile==null||ldaVocabFile.isEmpty) throw new Exception("Missing lda vocabulary file")
-        else readLda(dataFile, ldaVocabFile)
-      }else
+      else
         readHLCM(dataFile)
     }
   }
@@ -166,12 +160,6 @@ object Reader {
   def readLTMAndTuple(modelFile: String, dataFile: String): (LTM, Data) = {
     val model = readLTM(modelFile)
     val data = readTuple(dataFile).synchronize(model)
-    (model, data)
-  }
-
-  def readLTMAndLDA(modelFile: String, dataFile: String, vocabFile: String): (LTM, Data) = {
-    val model = readLTM(modelFile)
-    val data = readLda(dataFile, vocabFile).synchronize(model)
     (model, data)
   }
 
@@ -217,7 +205,6 @@ object Reader {
         case "arff" => readLTMAndARFF(modelFile, dataFile)
         case "tuple" => readLTMAndTuple(modelFile, dataFile)
         case "hlcm" => readLTMAndHLCM(modelFile, dataFile)
-        case "lda" => readLTMAndLDA(modelFile, dataFile, ldaVocabFile)
         case _ => throw new Exception("Unknown format")
       }
     }else{
@@ -225,8 +212,6 @@ object Reader {
         readLTMAndARFF(modelFile, dataFile)
       else if(dataFile.endsWith(".sparse.txt"))
         readLTMAndTuple(modelFile, dataFile)
-      else if(dataFile.endsWith(".lda.txt"))
-        readLTMAndLDA(modelFile, dataFile, ldaVocabFile)
       else
         readLTMAndHLCM(modelFile, dataFile)
     }

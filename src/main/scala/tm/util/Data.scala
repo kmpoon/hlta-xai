@@ -279,16 +279,7 @@ class Data(val variables: IndexedSeq[Variable], val instances: IndexedSeq[Data.I
     TupleWriter.write(filename, variables.map(_.getName), instances)
   }
   
-  /**
-   * Save as .lda and .vocab
-   * 
-   * Note that, this format only takes integer
-   */
-  def saveAsLda(dataFileName: String, vocabFileName: String) = {
-    LdaWriter.writeData(dataFileName, instances)
-    LdaWriter.writeVocab(vocabFileName, variables.map(_.getName))
-  }
-  
+
   def project[A](vars: Seq[A]) = vars.head match {
     case v: Variable => projectV(vars.asInstanceOf[Seq[Variable]])
     case s: String => projectS(vars.asInstanceOf[Seq[String]])

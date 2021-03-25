@@ -19,58 +19,7 @@ import scala.collection.GenSeq
 import org.apache.commons.text.StringEscapeUtils
 import org.slf4j.LoggerFactory
 
-object RegenerateHTMLTopicTree {
-  
-  type TopicTree = TreeList[Topic]
-  
-  class Conf(args: Seq[String]) extends Arguments(args) {
-    val topicFile = trailArg[String]()
-    val outputName = trailArg[String]()
-    val title = opt[String](default = Some("Topic Tree"), descr = "Title in the topic tree")
-    
-    val layer = opt[List[Int]](descr = "Layer number, i.e. 2,3,4")
-    
-    banner("""RegenerateHTMLTopicTree topics_file output_name [title]"
-        |e.g. RegenerateHTMLTopicTree TopicsTable.html output \"Topic Tree\"
-        |It generates the """+outputName+""".nodes.js file and uses
-        |"""+outputName+""".topics.js and """+outputName+""".titles.js if they exist.""")
-        
-    verify
-    checkDefaultOpts()  
-  }
 
-  def main(args: Array[String]) {
-    val conf = new Conf(args)
-    
-    run(conf.topicFile(), conf.outputName(), conf.title(), conf.layer.toOption)
-  }
-
-  def run(topicsFile: String, outputName: String, title: String, layer: Option[List[Int]] = None) = {
-    val order = readIslands(
-      FindTopLevelSiblingClusters.getIslandsFileName(outputName))
-    var topLevelTrees = TopicTree.readHtml(topicsFile)
-    if(layer.isDefined)
-      topLevelTrees = topLevelTrees.trimLevels(layer.get)
-    topLevelTrees = topLevelTrees.sortRoots { t => order(t.value.name) }
-    BuildWebsite(outputName, title, topLevelTrees)
-  }  
-  
-  /**
-   * Constructs a variable to index mapping for ordering the top level variables
-   * by reading the islands file.
-   */
-  def readIslands(islandsFileName: String) = {
-    if (FileHelpers.exists(islandsFileName)) {
-      Source.fromFile(islandsFileName).getLines
-        .flatMap(_.split(","))
-        .zipWithIndex.toMap
-    } else {
-      println(s"Islands file ${islandsFileName} not found.  " +
-        "It uses default ordering of top level topics.")
-      Map.empty[String, Int].withDefaultValue(0)
-    }
-  }
-}
 
 /**
  * BuildWebsite saves all files in .js so no ajax.get is required

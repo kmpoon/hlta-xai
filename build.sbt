@@ -2,7 +2,7 @@
 
 name := "HLTA-XAI"
 
-version := "2.3"
+version := "1.0"
 
 scalaVersion := "2.12.12"
 
@@ -25,18 +25,17 @@ libraryDependencies ++=
 //  "org.jsoup" % "jsoup" % "1.8.3" ::
 //  "org.apache.opennlp" % "opennlp-tools" % "1.6.0" ::
 //  "org.apache.opennlp" % "opennlp-maxent" % "3.0.3" ::
-  "org.apache.pdfbox" % "pdfbox" % "2.0.12" ::
   "colt" % "colt" % "1.2.0" ::
   "nz.ac.waikato.cms.weka" % "weka-stable" % "3.6.13" ::
 //  "io.argonaut" %% "argonaut" % "6.1" ::
   "org.json4s" %% "json4s-native" % "3.6.0-M2" ::
-  "com.github.tototoshi" %% "scala-csv" % "1.3.5" ::
+//  "com.github.tototoshi" %% "scala-csv" % "1.3.5" ::
 //  "junit" % "junit" % "4.11" ::
 // dependecies for fnlp
-  "net.sf.trove4j" % "trove4j" % "3.0.3" ::
-  "commons-cli" % "commons-cli" % "1.2" ::
+//  "net.sf.trove4j" % "trove4j" % "3.0.3" ::
+//  "commons-cli" % "commons-cli" % "1.2" ::
 // dependecy for word2vecjava
-  "com.google.guava" % "guava" % "20.0" ::
+//  "com.google.guava" % "guava" % "20.0" ::
 Nil
 
 javacOptions ++= Seq("-encoding", "UTF-8")
@@ -46,9 +45,6 @@ javacOptions ++= Seq("-source", "11", "-target", "11")
 
 assemblyJarName in assembly := "HLTA-XAI.jar"
 
-//assemblyOption in assembly :=
-//  (assemblyOption in assembly).value.copy(
-//    includeScala = false, includeDependency = false)
 
 // To skip test during assembly
 test in assembly := {}
@@ -62,10 +58,3 @@ assemblyMergeStrategy in assembly := {
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
 }
-
-
-// unmanagedClasspath in Compile += baseDirectory.value / "FastHLTA" / "bin"
-
-// unmanagedClasspath in Test += baseDirectory.value / "FastHLTA" / "bin"
-
-// unmanagedClasspath in Runtime += baseDirectory.value / "FastHLTA" / "bin"

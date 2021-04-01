@@ -3,11 +3,11 @@ package org.latlab.learner
 import collection.JavaConverters._
 import java.util.zip.GZIPInputStream
 
-import tm.test.BaseSpec
-import tm.util.Reader
+import xai.test.BaseSpec
+import xai.util.Reader
 import org.latlab.util.DataSet
 import org.latlab.util.DataSet.DataCase
-import tm.util.Reader.ARFFToData
+import xai.util.Reader.ARFFToData
 
 import java.util.ArrayList
 import java.util.Arrays
@@ -15,7 +15,7 @@ import java.util.Arrays
 class DataOpsSpec extends BaseSpec {
 
   trait TestData {
-    val data: tm.util.Data
+    val data: xai.util.Data
     lazy val sparseData = data.toTupleSparseDataSet()
     lazy val wholeData = sparseData.getWholeDenseData
   }

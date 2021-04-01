@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
@@ -45,8 +44,8 @@ import org.latlab.util.ScoreCalculator;
 import org.latlab.util.StringPair;
 import org.latlab.util.Utils;
 import org.latlab.util.Variable;
-import tm.hlta.BICScoreCalculator;
-import tm.util.DebugLog;
+import xai.hlta.BICScoreCalculator;
+import xai.util.DebugLog;
 
 /**
  * Hierarchical Latent Tree Analysis for topic detection.

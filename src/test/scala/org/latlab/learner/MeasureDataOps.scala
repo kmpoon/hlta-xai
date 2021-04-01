@@ -1,7 +1,7 @@
 package org.latlab.learner
 
-import tm.util.Reader
-import tm.util.Timer.time
+import xai.util.Reader
+import xai.util.Timer.time
 
 import scala.util.Random
 

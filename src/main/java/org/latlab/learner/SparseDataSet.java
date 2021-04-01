@@ -21,7 +21,6 @@ import org.mymedialite.data.IPosOnlyFeedback;
 import org.mymedialite.io.ItemData;
 import org.mymedialite.util.Random;
 
-import com.opencsv.CSVReader;
 
 public class SparseDataSet {
 
@@ -186,48 +185,6 @@ public class SparseDataSet {
 		return _VariablesSet;
 	}
 	
-	/**
-	 * Converts the csv input data , where rows represent datacase and columns represent variables, to 
-	 * the form of tuples. For Example in the original dataset if each datacase is a documnet, then we would 
-	 * have tuples like (doc,word1),(doc(word2)...
-	 * Here word1 represents the name of the corresponding variable in the .csv file
-	 * We then write this converted dataset to a file for future use.
-	 * @param DataSetNameCsv .csv datafile name
-	 * @param OutputDataSetPath the path where the converted input data format will be saved
-	 * @throws IOException 
-	 */
-	
-	public static void convertCSVtoTuples(String DataSetNameCsv, String OutputDataSetPath) throws IOException{
-		
-		PrintWriter out = new PrintWriter(OutputDataSetPath+File.separator+"SparseDataInputFormat.txt");
-		
-		// get the reader, split char = , and quotation char = " 
-		// We start from line 0
-		CSVReader reader = new CSVReader(new FileReader(DataSetNameCsv), ',', '"', 0);
-		
-		Iterator<String[]> iter = reader.iterator();
-		
-		//Line 0 should contain the variable names so read them first
-		String[] varName = iter.next();
-		
-		int row_id = 1;
-		while(iter.hasNext()){
-			
-			String[] datacase = iter.next();
-			
-			for(int i = 0 ; i < datacase.length ; i++){
-				// For each datacase get the variables which are 1
-				if(Integer.parseInt(datacase[i]) == 1){
-					out.println(Integer.toString(row_id)+","+varName[i]);// write a (doc,varName) tuple
-				}
-			}
-			
-			row_id++;
-		}
-		
-		out.close();
-		reader.close();
-	} 
 
 	/**
 	 * Randomize the order of the datacases. create an list with size _totalDatacases and in which

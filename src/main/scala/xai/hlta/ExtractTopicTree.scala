@@ -17,25 +17,19 @@ import scala.collection.JavaConverters._
 
 object ExtractTopicTree {
   class Conf(args: Seq[String]) extends Arguments(args) {
-    banner("Usage: tm.hlta.ExtractTopicTree [OPTION]... name model data")
+    banner("Usage: tm.hlta.ExtractTopicTree [OPTION]... name model_file")
     val name = trailArg[String](descr = "Name of the topic tree file to be generated")
     val model = trailArg[String](descr = "Model file (e.g. model.bif)")
-    val data = trailArg[String](required = false, descr = "Data file, if using --broad, this is not required")
 
-    val ldaVocab = opt[String](default = None, descr = "LDA vocab file, only required if lda data is provided")
-
-    val broad = opt[Boolean](default = Some(true), descr = "use broad defined topic, run faster but more document will be categorized into the topic")
     val title = opt[String](default = Some("Topic Tree"), descr = "Title in the topic tree")
     val layer = opt[List[Int]](descr = "Layer number, i.e. --layer 1 3")
-    val keywords = opt[Int](default = Some(7), descr = "number of keywords for each topic")
+    val keywords = opt[Int](default = Some(100), descr = "number of keywords for each topic (default: 100)")
     val keywordsProb = opt[Boolean](default = Some(false), descr = "show probability of individual keyword")
     val tempDir = opt[String](default = Some("topic_output"),
       descr = "Temporary output directory for extracted topic files (default: topic_output)")
 
     verify
     checkDefaultOpts()
-    if(data.isEmpty && !broad())
-      throw new Exception("Missing parameter data or missing option --broad")
   }
 
   val logger = LoggerFactory.getLogger(ExtractTopicTree.getClass)

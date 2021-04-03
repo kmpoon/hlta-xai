@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import org.latlab.util.Function
 import org.latlab.util.Variable
 import org.latlab.model.BeliefNode
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import org.latlab.util.DataSet
 import org.latlab.reasoner.CliqueTreePropagation
 import xai.util.Data
@@ -20,14 +20,15 @@ object HLTA {
 
   class Conf(args: Seq[String]) extends Arguments(args) {
     banner(
-      """Usage: HLTA [OPTION]... dataFile emMaxStep name
-        |E.g. HLTA data.sparse.txt 50 model1
+      """Usage: HLTA [OPTION]... data_file model_name
+        |E.g. HLTA data.sparse.txt model1
         |The output file will be model1.bif
         |
-        |Please refer to the paper "Latent Tree Models for Hierarchical Topic Detection" for algorithmic details""")
+        |Performs HLTA on labels to build a hierarchy of label clusters.
+        |The model can be further processed for XAI.""")
 
-    val data = trailArg[String]()
-    val outputName = trailArg[String]()
+    val dataFile = trailArg[String]()
+    val modelName = trailArg[String]()
 
 
     val emMaxStep = opt[Int](descr = "Maximum number of EM steps (e.g. 50)", default = Some(200))
@@ -58,7 +59,7 @@ object HLTA {
     val conf = new Conf(args)
     println(conf.summary)
 
-    val (sparseData, dataSize) = readSparseDataAndSize(conf.data())
+    val (sparseData, dataSize) = readSparseDataAndSize(conf.dataFile())
 
     val _structLearnSize = if (conf.structUseAll()) dataSize else conf.structLearnSize()
     val structBatchSize = conf.structBatchSize()
@@ -68,7 +69,7 @@ object HLTA {
 
     val builder = new clustering.StepwiseEMHLTA()
     builder.initialize(sparseData, conf.emMaxStep(), conf.emNumRestart(), conf.emThreshold(), conf.udThreshold(),
-      conf.outputName(), conf.maxIsland(), conf.maxTop(),
+      conf.modelName(), conf.maxIsland(), conf.maxTop(),
       conf.runGlobalEm(), conf.globalBatchSize(), conf.globalMaxEpochs(), conf.globalMaxEmSteps(),
       noBridging, _structLearnSize, structBatchSize,
       conf.ctThreshold.getOrElse(Double.MinValue), conf.ctThreshold.isEmpty)
@@ -250,7 +251,7 @@ object HLTA {
       }
     }
 
-    val instances = data.getData.par.map { d =>
+    val instances = data.getData.asScala.par.map { d =>
       val ctp = tl.get
       ctp.setEvidence(data.getVariables, d.getStates)
       ctp.propagate()
@@ -330,7 +331,7 @@ object HLTA {
         Tree.leaf(node)
       else {
         val level = varToLevel(node.getVariable)
-        val children = node.getChildren.toList
+        val children = node.getChildren.asScala.toList
           .map(_.asInstanceOf[BeliefNode])
           .filter(n => n.isLeaf || varToLevel(n.getVariable) < level)
           .map(build)
@@ -343,7 +344,7 @@ object HLTA {
 
   def getValue(f: Function)(variables: Seq[Variable], states: IndexedSeq[Int]) = {
     // from order of function variables to order of given variables
-    val indices = f.getVariables.map(variables.indexOf(_))
+    val indices = f.getVariables.asScala.map(variables.indexOf(_))
     f.getValue(indices.map(states.apply).toArray)
   }
 }

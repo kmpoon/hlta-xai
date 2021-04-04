@@ -210,7 +210,8 @@ function showAlert(message) {
 
 $(function() {
 	topmost = levels.length
-	bottommost = Math.max(1, levels.length - 1)
+	// bottommost = Math.max(1, levels.length - 1)
+	bottommost = 1
 
 	// set the default values of the levels
 	$("#top-input").val(topmost)

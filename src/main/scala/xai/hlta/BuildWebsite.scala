@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory
  * No ajax call allows to read the website as normal file
  */
 object BuildWebsite{
+
+  val packageName = "xai/hlta"
   
   val logger = LoggerFactory.getLogger(BuildWebsite.getClass)
   
@@ -93,7 +95,7 @@ object BuildWebsite{
     }
     
     val template = Source.fromInputStream(
-      this.getClass.getResourceAsStream("/tm/hlta/template.html"))
+      this.getClass.getResourceAsStream(s"/$packageName/template.html"))
       .getLines.mkString("\n")
 
     val writer = new PrintWriter(outputFile)
@@ -141,36 +143,36 @@ object BuildWebsite{
     }
 
     Seq(
-      ("/tm/hlta/jquery-2.2.3.min.js", "jquery.min.js"),
-      "/tm/hlta/jstree.min.js",
-      //      "/tm/hlta/jquery.magnific-popup.min.js",
-      "/tm/hlta/jquery.tablesorter.min.js",
-      "/tm/hlta/jquery.tablesorter.widgets.js",
-      "/tm/hlta/magnific-popup.css",
-      "/tm/hlta/custom.js",
-      "/tm/hlta/custom.css",
-      //      "/tm/hlta/tablesorter/blue/asc.gif",
-      //      "/tm/hlta/tablesorter/blue/bg.gif",
-      //      "/tm/hlta/tablesorter/blue/desc.gif",
-      //      ("/tm/hlta/tablesorter/blue/style.css", "tablesorter.css"),
-      ("/tm/hlta/tablesorter/themes/theme.bootstrap.css", "tablesorter.css"),
-      //      "/tm/hlta/tablesorter/themes/bootstrap-black-unsorted.png",
-      //      "/tm/hlta/tablesorter/themes/bootstrap-white-unsorted.png",
-      "/tm/hlta/jstree/themes/default/style.min.css",
-      "/tm/hlta/jstree/themes/default/32px.png",
-      "/tm/hlta/jstree/themes/default/40px.png",
-      "/tm/hlta/jstree/themes/default/throbber.gif",
-      "/tm/hlta/ie10-viewport-bug-workaround.css",
-      "/tm/hlta/ie10-viewport-bug-workaround.js",
-      "/tm/hlta/bootstrap.min.css",
-      "/tm/hlta/bootstrap.min.js")
+      (s"/$packageName/jquery-2.2.3.min.js", "jquery.min.js"),
+      s"/$packageName/jstree.min.js",
+      //      s"/$pack/jquery.magnific-popup.min.js",
+      s"/$packageName/jquery.tablesorter.min.js",
+      s"/$packageName/jquery.tablesorter.widgets.js",
+      s"/$packageName/magnific-popup.css",
+      s"/$packageName/custom.js",
+      s"/$packageName/custom.css",
+      //      s"/$pack/tablesorter/blue/asc.gif",
+      //      s"/$pack/tablesorter/blue/bg.gif",
+      //      s"/$pack/tablesorter/blue/desc.gif",
+      //      (s"/$pack/tablesorter/blue/style.css", "tablesorter.css"),
+      (s"/$packageName/tablesorter/themes/theme.bootstrap.css", "tablesorter.css"),
+      //      s"/$pack/tablesorter/themes/bootstrap-black-unsorted.png",
+      //      s"/$pack/tablesorter/themes/bootstrap-white-unsorted.png",
+      s"/$packageName/jstree/themes/default/style.min.css",
+      s"/$packageName/jstree/themes/default/32px.png",
+      s"/$packageName/jstree/themes/default/40px.png",
+      s"/$packageName/jstree/themes/default/throbber.gif",
+      s"/$packageName/ie10-viewport-bug-workaround.css",
+      s"/$packageName/ie10-viewport-bug-workaround.js",
+      s"/$packageName/bootstrap.min.css",
+      s"/$packageName/bootstrap.min.js")
       .foreach(p => copy(p, assetDir))
 
-    Seq("/tm/hlta/bootstrap/fonts/glyphicons-halflings-regular.eot",
-      "/tm/hlta/bootstrap/fonts/glyphicons-halflings-regular.svg",
-      "/tm/hlta/bootstrap/fonts/glyphicons-halflings-regular.ttf",
-      "/tm/hlta/bootstrap/fonts/glyphicons-halflings-regular.woff",
-      "/tm/hlta/bootstrap/fonts/glyphicons-halflings-regular.woff2")
+    Seq(s"/$packageName/bootstrap/fonts/glyphicons-halflings-regular.eot",
+      s"/$packageName/bootstrap/fonts/glyphicons-halflings-regular.svg",
+      s"/$packageName/bootstrap/fonts/glyphicons-halflings-regular.ttf",
+      s"/$packageName/bootstrap/fonts/glyphicons-halflings-regular.woff",
+      s"/$packageName/bootstrap/fonts/glyphicons-halflings-regular.woff2")
       .foreach(p => copy(p, fontsDir))
   }
 }

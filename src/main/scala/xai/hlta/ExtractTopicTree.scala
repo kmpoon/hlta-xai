@@ -24,7 +24,7 @@ object ExtractTopicTree {
     val title = opt[String](default = Some("Topic Tree"), descr = "Title in the topic tree")
     val layer = opt[List[Int]](descr = "Layer number, i.e. --layer 1 3")
     val keywords = opt[Int](default = Some(100), descr = "number of keywords for each topic (default: 100)")
-    val keywordsProb = opt[Boolean](default = Some(false), descr = "show probability of individual keyword")
+//    val keywordsProb = opt[Boolean](default = Some(false), descr = "show probability of individual keyword")
     val tempDir = opt[String](default = Some("topic_output"),
       descr = "Temporary output directory for extracted topic files (default: topic_output)")
 
@@ -42,7 +42,7 @@ object ExtractTopicTree {
       //Thus, no data are required
       val model = Reader.readModel(conf.model())
       logger.debug(s"will broad")
-      broad(model, conf.layer.toOption, conf.keywords(), conf.keywordsProb())
+      broad(model, conf.layer.toOption, conf.keywords(), false)
     }
     logger.info("Topic tree extraction is done.")
     logger.debug(s"narrow or broad done. will BuildWebsite")
@@ -54,6 +54,8 @@ object ExtractTopicTree {
     topicTree.saveAsSimpleHtml(conf.name()+".simple.html")
     logger.info("The topic tree is available at "+conf.name()+".html")
     logger.debug(s"saveAsJson done. filename " + conf.name() + ".nodes.json")
+
+    RemoveProbabilities.removeFromFile(Path.of(s"${conf.name()}.nodes.js"))
   }
 
   def broad(model: LTM, layer: Option[List[Int]] = None, keywords: Int = 7, keywordsProb: Boolean = false) = {

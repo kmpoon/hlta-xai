@@ -31,7 +31,7 @@ After building the model, a topic tree displayed in a webpage can be built by th
 
 ```java -cp HLTA-XAI.jar xai.hlta.ExtractTopicTree output_name model_file```
 
-In the above, `output_name` is the name of the output tree, `output_name` is the name of the output such that the resulting model will be `output_name.bif` and `HLTA-XAI.jar` is the jar library of the HLTA-XAI package.
+In the above, `output_name` is the name of the output tree, `output_name` is the name of the output such that the resulting topic tree can be opened from the file `output_name.html` and `HLTA-XAI.jar` is the jar library of the HLTA-XAI package.
 
 
 

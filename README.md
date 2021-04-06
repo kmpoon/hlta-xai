@@ -1,12 +1,12 @@
-# HLTA for XAI
+# HLTMs for Explanable AI
 
-Hierarchical latent tree analysis (HLTA) has been used for hierarchical topic detection based on co-occurrence of words in documents.  We applied the same technique to find a hierarchy of clusters of labels based on co-occurrence.  The label clusters can be used for explaining the behaviour of classifiers after further processing.
+Hierarchical latent tree models (HLTMs) have been used for hierarchical topic detection based on co-occurrence of words in documents.  We can apply the same technique to find a hierarchy of clusters of labels based on co-occurrence.  The label clusters can be used for explaining the behaviour of classifiers after further processing.
 
 # Running
 
 ## Building Models
 
-To build a hierarchical latent tree model (HLTM), run the following command:
+To build a hierarchical latent tree model, run the following command:
 
 ```java -cp HLTA-XAI.jar xai.hlta.HLTA data_file output_name```
 
@@ -22,7 +22,7 @@ There are two options that may influence the structural learning.
 
 1. `--struct-batch-size  <num>` indicates the sample size used for calculating the BIC score in the UD-test.  A larger size may lead to smaller label clusters in the model.  The number of samples used in XAI may be too large compared to the sample size that is used to derive the BIC score, hence there may be a need to specify a certain number.  The default value is 5000.  This means that when the BIC score is calculated, the BIC scores for batches of 5000 samples are calculated and then the average of the BIC scores is used in the UD-test.  It is suggested to try a range of values from 1,000 to 10,000.
 
-2. `--struct-learn-size  <arg>` indicates the number of samples to be used in structural learning.  A larger number means more memory and CPU time will be needed.  If a number smaller than the original sample size is specified, a subset of samples will be randomly selected from the original data set.
+2. `--struct-learn-size  <arg>` indicates the number of samples to be used in structural learning.  A negative number indicates all data samples will be used. A larger number means more memory and CPU time will be needed.  If a number smaller than the original sample size is specified, a subset of samples will be randomly selected from the original data set.  By default, all data samples will be used. A smaller number can be specified if less time or memory is available.
 
 
 ## Extracting Trees

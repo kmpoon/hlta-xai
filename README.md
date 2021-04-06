@@ -2,7 +2,7 @@
 
 Hierarchical latent tree models (HLTMs) have been used for hierarchical topic detection based on co-occurrence of words in documents.  We can apply the same technique to find a hierarchy of clusters of labels based on co-occurrence.  The label clusters can be used for explaining the behaviour of classifiers after further processing.
 
-The code in this repository has been used for building HLTMs for the paper "Contrastive Whole-Output Explanation" (to be published).
+The code in this repository has been used for building HLTMs for the paper "**Contrastive Whole-Output Explanation**" (to be published).
 
 # Running
 

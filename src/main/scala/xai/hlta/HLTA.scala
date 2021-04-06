@@ -46,8 +46,7 @@ object HLTA {
     val globalMaxEpochs = opt[Int](descr = "Number of times the whole training dataset has been gone through (e.g. 10). <paper section 7>", default = Some(10))
     val globalMaxEmSteps = opt[Int](descr = "Maximum number of stepwise EM steps (e.g. 128). <paper section 7>", default = Some(128))
 
-    val structLearnSize = opt[Int](descr = "Number of data cases used for building model structure. <paper section 7>", default = Some(100000))
-    val structUseAll = opt[Boolean](descr = "Use all data cases for building model structure. <paper section 7>", default = Some(false))
+    val structLearnSize = opt[Int](descr = "Number of data cases used for building model structure. A negative number indicates that all data samples will be used. <paper section 7> (Default: -1)", default = Some(100000))
     val structBatchSize = opt[Int](descr = "Batch size to use for UD-Test.  If negative, the original data for structural learning is used.", default = Some(5000))
 
     verify
@@ -61,7 +60,7 @@ object HLTA {
 
     val (sparseData, dataSize) = readSparseDataAndSize(conf.dataFile())
 
-    val _structLearnSize = if (conf.structUseAll()) dataSize else conf.structLearnSize()
+    val _structLearnSize = if (conf.structLearnSize() < 0) dataSize else conf.structLearnSize()
     val structBatchSize = conf.structBatchSize()
     println(s"Parameters for structural learning - sample size: ${_structLearnSize}, batch size: ${structBatchSize}")
 
